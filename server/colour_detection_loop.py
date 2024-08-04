@@ -1,7 +1,5 @@
 import logging
 
-logging.basicConfig(format="\x1b[32m[%(asctime)s] \x1b[33m{%(levelname)s} \x1b[34m%(message)s\x1b[0m", datefmt="%H:%M:%S", level=logging.DEBUG)
-
 import numpy.typing
 import cv2
 import base64
@@ -16,17 +14,18 @@ import socket
 
 VIDEO_CAPTURE_DEVICE_INDEX = 2
 SOCKETIO_EVENT_NAME = "data-url"
-SEND_TO_EV3_EVERY = 250 * pow(10, 6) # nanoseconds (ms * 10^6)
+SEND_TO_EV3_EVERY = 250 * pow(10, 6) # nanoseconds (milliseconds * 10^6)
 
 def ndarray_to_b64(ndarray: numpy.typing.NDArray):
     return base64.b64encode(ndarray.tobytes()).decode()
 
 
-def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
+# def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
+def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
     capture = cv2.VideoCapture(VIDEO_CAPTURE_DEVICE_INDEX)
 
     if not capture.isOpened():
-        logging.error("Error: Could not open video stream.")
+        logging.error("Could not open video stream.")
         return
 
     # Get the width of the video frame
@@ -40,38 +39,29 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
 
         retval, raw_frame = capture.read()
         if not retval:
-            logging.error("Error: Could not read frame.")
+            logging.error("Could not read frame.")
             return
 
-        (processed_frame, detected_objects) = detect_colour_and_draw(raw_frame, midpoint_x)
+        (processed_frame, red_detected_objects, blue_detected_objects) = detect_colour_and_draw(raw_frame, midpoint_x)
 
         (retval, jpg_image) = cv2.imencode(".jpg", processed_frame)
 
         if retval is False:
-            logging.warning("Warning: Image encoding unsuccessful, skipping frame.")
+            logging.warning("Image encoding unsuccessful, skipping frame.")
             continue
 
         socketio_app.emit(SOCKETIO_EVENT_NAME, {
             "b64ImageData": ndarray_to_b64(jpg_image),
-            "detectedObjects": detected_objects
+            "redDetectedObjects": red_detected_objects,
+            "blueDetectedObjects": blue_detected_objects
         })
 
-        if (now - last) < SEND_TO_EV3_EVERY:
-            continue
 
-        last = now
+        # if (now - last) < SEND_TO_EV3_EVERY:
+        #     continue
+        # last = now
 
-        # resultStr = "|"
-        # for obj in detected_objects:
-        #     resultStr += str(obj[0][0]) # centre x
-        #     resultStr += ","
-        #     resultStr += str(obj[0][1]) # centre y
-        #     resultStr += ","
-        #     resultStr += str(int(obj[1])) # distance
-        #     resultStr += "|"
-
-        # print(resultStr)
-        try:
-            client_sock.sendall(stringify_json(detected_objects).encode())
-        except OSError as e:
-            logging.error(f"`OSError` while sending data: {e}")
+        # try:
+        #     client_sock.sendall(stringify_json(detected_objects).encode())
+        # except OSError as e:
+        #     logging.error(f"`OSError` while sending data: {e}")

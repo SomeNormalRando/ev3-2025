@@ -7,17 +7,16 @@ from PS4Keymap import PS4Keymap
 # from datetime import datetime
 from time import sleep
 
-from ev3dev2.motor import MoveJoystick, LargeMotor, MediumMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent
+from ev3dev2.motor import MoveJoystick, LargeMotor, MediumMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C
 from ev3dev2 import DeviceNotFound
 from ev3dev2.power import PowerSupply
-from ev3dev2.sensor import Sensor, INPUT_1, INPUT_4
-from ev3dev2.sensor.lego import ColorSensor
 
 from typing import Tuple
 
 from threading import Thread
 from data_sender import start_send_loop
 
+CODE_FG_YELLOW = "\x1b[33m"
 
 logging.info("Modules loaded.")
 
@@ -25,47 +24,13 @@ class CleanSweep:
     '''
     Receives input from a connected PS4 controller and runs the robot. 
     '''
-
-    #region static methods
-    @staticmethod
-    def scale_range(val: float, src: Tuple[float, float], dst: Tuple[float, float]):
-        MIN = src[0]
-        MAX = src[1]
-        NEW_MIN = dst[0]
-        NEW_MAX = dst[1]
-        a = (NEW_MAX - NEW_MIN) / (MAX - MIN)
-        b = NEW_MAX - (a * MAX)
-        return (a * val) + b
-
-    @staticmethod
-    def scale_joystick(val: float):
-        return CleanSweep.scale_range(
-            val,
-            (0, 255),
-            (-CleanSweep.JOYSTICK_SCALE_RADIUS, CleanSweep.JOYSTICK_SCALE_RADIUS)
-        )
-
-    @staticmethod
-    def find_ps4_controller():
-        devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-        controller = None
-        for device in devices:
-            if device.name == "Wireless Controller":
-                controller = device
-                logging.info("PS4 controller found.")
-                return controller
-
-        raise ConnectionError(str.format("PS4 controller not found (devices: `{}`).", devices))
-
-    #endregion
-
     JOYSTICK_SCALE_RADIUS = 100
     JOYSTICK_THRESHOLD = 10
     OPENING_MOTOR_SPEED = 10
-    OPENING_MOTOR_ROTATIONS = 1
+    # OPENING_MOTOR_ROTATIONS = 1
 
     # automatic mode
-    _MOVEMENT_SPEED_PERCENT_ = 100
+    _MOVEMENT_SPEED_ = 100
 
     def __init__(self):
         self.controller = CleanSweep.find_ps4_controller()
@@ -80,7 +45,7 @@ class CleanSweep:
         self.auto_mode = False
 
         self.connected_to_server = False
-        self.closest_detected_obj = []
+        self.closest_detected_obj = None 
 
     def connect_inputs_and_outputs(self):
         t = 5
@@ -116,19 +81,27 @@ class CleanSweep:
     def start_motors_and_activekeys_loop(self):
         logging.info("Started motors loop.")
         while True:
-            # ACTIVE KEYS
             active_keys = self.controller.active_keys()
 
             if self.auto_mode is True:
                 if PS4Keymap.BTN_R2.value in active_keys:
                     self.auto_mode = False
-                    logging.info("Automatic mode stopped. The remote control (PS4 controller) is now ENABLED.\n")
-                else:
-                    self.run_auto_mode()
+                    logging.info("{}Automatic mode stopped. The remote control (PS4 controller) is now ENABLED.".format(CODE_FG_YELLOW))
 
-            if PS4Keymap.BTN_R1.value in active_keys and self.auto_mode is False:
+                # if no detected objects, go straight
+                if self.closest_detected_obj is None:
+                    self.run_auto_mode(0)
+                else:
+                    # data format: [[centre_x, centre_y], distance, location]
+                    self.run_auto_mode(self.closest_detected_obj[2])
+                continue
+
+            # execution stops here if self.auto_mode is True
+
+            if PS4Keymap.BTN_R1.value in active_keys:
                 self.auto_mode = True
-                logging.info("Automatic mode started. The remote control (PS4 controller) is now DISABLED.\n")
+                logging.info("{}Automatic mode started. The remote control (PS4 controller) is now DISABLED.".format(CODE_FG_YELLOW))
+                continue
 
             # MOTORS
             self.move_joystick.on(
@@ -145,23 +118,56 @@ class CleanSweep:
                 self.opening_motor.stop()
 
     def run_auto_mode(self, detected_obj_location):
+        logging.debug("run_auto_mode(detected_obj_location={})".format(detected_obj_location))
         if detected_obj_location == 0:
             self.move_joystick.on(
                 0, # go straight
-                CleanSweep._MOVEMENT_SPEED_PERCENT_,
+                CleanSweep._MOVEMENT_SPEED_,
                 CleanSweep.JOYSTICK_SCALE_RADIUS
             )
         elif detected_obj_location == -1:
             self.move_joystick.on(
-                -(CleanSweep._MOVEMENT_SPEED_PERCENT_ / 2), # turn left
-                CleanSweep._MOVEMENT_SPEED_PERCENT_,
+                -(CleanSweep._MOVEMENT_SPEED_), # turn left
+                CleanSweep._MOVEMENT_SPEED_,
                 CleanSweep.JOYSTICK_SCALE_RADIUS
             )
         elif detected_obj_location == 1:
             self.move_joystick.on(
-                CleanSweep._MOVEMENT_SPEED_PERCENT_ / 2, # turn right
-                CleanSweep._MOVEMENT_SPEED_PERCENT_,
+                CleanSweep._MOVEMENT_SPEED_, # turn right
+                CleanSweep._MOVEMENT_SPEED_,
                 CleanSweep.JOYSTICK_SCALE_RADIUS
             )
         else:
-            print("???")
+            logging.warning("run_auto_mode(): parameter `detected_obj_location` is not -1, 0, or 1")
+
+    #region static methods
+    @staticmethod
+    def scale_range(val: float, src: Tuple[float, float], dst: Tuple[float, float]):
+        MIN = src[0]
+        MAX = src[1]
+        NEW_MIN = dst[0]
+        NEW_MAX = dst[1]
+        a = (NEW_MAX - NEW_MIN) / (MAX - MIN)
+        b = NEW_MAX - (a * MAX)
+        return (a * val) + b
+
+    @staticmethod
+    def scale_joystick(val: float):
+        return CleanSweep.scale_range(
+            val,
+            (0, 255),
+            (-CleanSweep.JOYSTICK_SCALE_RADIUS, CleanSweep.JOYSTICK_SCALE_RADIUS)
+        )
+
+    @staticmethod
+    def find_ps4_controller():
+        devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+        controller = None
+        for device in devices:
+            if device.name == "Wireless Controller":
+                controller = device
+                logging.info("PS4 controller found.")
+                return controller
+
+        raise ConnectionError(str.format("PS4 controller not found (devices: `{}`).", devices))
+    #endregion

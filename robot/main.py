@@ -3,9 +3,15 @@ import logging
 from threading import Thread    
 from ev3dev2.led import Leds
 
-logging.basicConfig(format="\x1b[32m[%(asctime)s] \x1b[33m{%(levelname)s} \x1b[34m%(message)s\x1b[0m", datefmt="%H:%M:%S", level=logging.DEBUG)
+logging.basicConfig(
+    format="\x1b[30m[%(asctime)s \x1b[33m%(levelname)s\x1b[30m] \x1b[34m%(message)s\x1b[0m", 
+    datefmt="%H:%M:%S",
+    level=logging.DEBUG
+)
 
-logging.info("ev3.py running.")
+CODE_FG_BRIGHT_BLUE = "\x1b[94m"
+
+logging.info("main.py running.")
 
 LEDs = Leds()
 
@@ -44,11 +50,11 @@ def start_receive_loop():
             logging.error("Failed to connect:", error)
             return
 
-        logging.info(str.format("Successfully connected to server (bluetooth device {}, channel {}).", BLUETOOTH_ADDRESS, CHANNEL))
+        logging.info("{}Successfully connected to server (bluetooth device {}, channel {}).".format(CODE_FG_BRIGHT_BLUE, BLUETOOTH_ADDRESS, CHANNEL))
         # robot.connected_to_server = True
 
         try:
-            logging.info("Started Bluetooth socket receive loop.")
+            logging.info("{}Started Bluetooth socket receive loop.".format(CODE_FG_BRIGHT_BLUE))
             while True:
                 # recv even if auto mode is not True so that raw_data doesn't build up into [][][][]
                 raw_data = s.recv(1024)
@@ -56,27 +62,30 @@ def start_receive_loop():
                     continue
 
                 if not raw_data:
-                    logging.info("{{Bluetooth socket}} Disconnected from {}.".format(BLUETOOTH_ADDRESS))
+                    logging.info("{}{{Bluetooth socket}} Disconnected from {}.".format(BLUETOOTH_ADDRESS).format(CODE_FG_BRIGHT_BLUE))
                     break
 
                 data_str = raw_data.decode()
-                logging.debug(str.format("Data received: {}", data_str))
-                
-                data_json = loads(data_str)
+                logging.debug("\x1b[30mData received: {}".format(data_str))
 
-                closest_obj = []
-                # find min distance
-                min_val = max(obj[1] for obj in data_json)
+                data_json = loads(data_str)
+                if len(data_json) == 0:
+                    robot.closest_detected_obj = None
+                    continue
+
+                # data format: [ [[centre_x, centre_y], distance, location], [[centre_x, centre_y], distance, location] ]
+
+                # find value of min distance
+                min_val = min(obj[1] for obj in data_json)
                 # get the object that has the min distance
                 for obj in data_json:
                     if obj[1] == min_val:
-                        closest_obj = obj
-
-                robot.closest_detected_obj = closest_obj
+                        robot.closest_detected_obj = obj
+                        break
 
 
         except ConnectionError as error:
-            logging.error("Connection error (robot most likely disconnected from server):", error)
+            logging.error("{}Connection error (robot most likely disconnected from server):".format(CODE_FG_BRIGHT_BLUE), error)
             robot.connected_to_server = False
 
 # COMMENT THESE TWO LINES TO STOP PUBLISHING MESSAGES THROUGH BLUETOOTH SOCKET
