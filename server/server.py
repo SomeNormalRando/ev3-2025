@@ -24,7 +24,7 @@ PORT = 8000
 BLUETOOTH_ADDRESS = "60:f2:62:a9:d8:cc" 
 CHANNEL = 5 # random number
 
-do_bluetooth = False
+do_bluetooth = True
 
 flask_app = Flask(__name__, static_folder="static", template_folder="templates")
 socketio_app = SocketIO(flask_app)
@@ -74,21 +74,21 @@ if (do_bluetooth is False):
     socketio_app.run(**run_params)
 
 with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as server_sock:
-    logging.info(f"[Bluetooth] Created server socket {server_sock}.\n")
+    logging.info(f"[Bluetooth] Created server socket {server_sock}.")
 
     server_sock.bind((BLUETOOTH_ADDRESS, CHANNEL))
     server_sock.listen(1)
 
-    logging.info("[Bluetooth] Waiting for socket connection from client (EV3)...\n")
+    logging.info("[Bluetooth] Waiting for socket connection from client (EV3)...")
 
     client_sock, address = server_sock.accept()
 
-    logging.info(f"[Bluetooth] Accepted connection from client socket.\n")
-    logging.debug(f"`client_sock`: {client_sock}, address {address}")
-    logging.debug(f"`server_sock`: {server_sock}")
+    logging.info(f"[Bluetooth] Accepted connection from client socket.")
+    logging.debug(f"\x1b[30m`client_sock`: {client_sock}, address {address}")
+    logging.debug(f"\x1b[30m`server_sock`: {server_sock}")
 
     executor = ThreadPoolExecutor(max_workers=1)
-    # executor.submit(colour_detection_loop, socketio_app, client_sock)
+    executor.submit(colour_detection_loop, socketio_app, client_sock)
 
     if __name__ == "__main__":
         socketio_app.run(**run_params)

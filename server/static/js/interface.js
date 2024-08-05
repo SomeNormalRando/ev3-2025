@@ -11,17 +11,17 @@ const socket = io();
 const imgEl = document.getElementById("img-el");
 const fpsNumberDisplay = document.getElementById("fps-number-display");
 const redDetectionsNumberDisplay = document.getElementById("red-detections-number-display");
-const blueDetectionsNumberDisplay = document.getElementById("blue-detections-number-display");
+// const blueDetectionsNumberDisplay = document.getElementById("blue-detections-number-display");
 
 let last = performance.now();
 let numFramesSinceLast = 0;
 
-socket.on(SOCKETIO_EVENT_NAME, ({ b64ImageData, redDetectedObjects, blueDetectedObjects }) => {
+socket.on(SOCKETIO_EVENT_NAME, ({ b64ImageData, redDetectedObjects }) => {
 	imgEl.src = `${B64_PREFIX}${b64ImageData}`;
 
 	// console.log(detectedObjects)
 	redDetectionsNumberDisplay.innerText = redDetectedObjects.length;
-	blueDetectionsNumberDisplay.innerText = blueDetectedObjects.length;
+	// blueDetectionsNumberDisplay.innerText = blueDetectedObjects.length;
 
 	const now = performance.now();
 	if ((now - last) <= UPDATE_FPS_EVERY_MS) {

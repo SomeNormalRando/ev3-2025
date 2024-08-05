@@ -13,10 +13,10 @@ from ev3dev2.power import PowerSupply
 
 from typing import Tuple
 
-from threading import Thread
-from data_sender import start_send_loop
+# from threading import Thread
+# from data_sender import start_send_loop
 
-CODE_FG_YELLOW = "\x1b[33m"
+CODE_FG_GREEN = "\x1b[32m"
 
 logging.info("Modules loaded.")
 
@@ -30,7 +30,7 @@ class CleanSweep:
     # OPENING_MOTOR_ROTATIONS = 1
 
     # automatic mode
-    _MOVEMENT_SPEED_ = 100
+    _MOVEMENT_SPEED_ = 15
 
     def __init__(self):
         self.controller = CleanSweep.find_ps4_controller()
@@ -45,7 +45,9 @@ class CleanSweep:
         self.auto_mode = False
 
         self.connected_to_server = False
-        self.closest_detected_obj = None 
+        self.closest_detected_obj = None
+
+        self.reduce_movejoystick_speed = False
 
     def connect_inputs_and_outputs(self):
         t = 5
@@ -86,7 +88,7 @@ class CleanSweep:
             if self.auto_mode is True:
                 if PS4Keymap.BTN_R2.value in active_keys:
                     self.auto_mode = False
-                    logging.info("{}Automatic mode stopped. The remote control (PS4 controller) is now ENABLED.".format(CODE_FG_YELLOW))
+                    logging.info("{}Automatic mode stopped. The remote control (PS4 controller) is now ENABLED.".format(CODE_FG_GREEN))
 
                 # if no detected objects, go straight
                 if self.closest_detected_obj is None:
@@ -100,15 +102,23 @@ class CleanSweep:
 
             if PS4Keymap.BTN_R1.value in active_keys:
                 self.auto_mode = True
-                logging.info("{}Automatic mode started. The remote control (PS4 controller) is now DISABLED.".format(CODE_FG_YELLOW))
+                logging.info("{}Automatic mode started. The remote control (PS4 controller) is now DISABLED.".format(CODE_FG_GREEN))
                 continue
 
             # MOTORS
-            self.move_joystick.on(
-                self.joystick_x if abs(self.joystick_x) > CleanSweep.JOYSTICK_THRESHOLD else 0,
-                self.joystick_y if abs(self.joystick_y) > CleanSweep.JOYSTICK_THRESHOLD else 0,
-                CleanSweep.JOYSTICK_SCALE_RADIUS
-            )
+            if self.reduce_movejoystick_speed == True:
+                self.move_joystick.on(
+                    self.joystick_x / 3 if abs(self.joystick_x) > CleanSweep.JOYSTICK_THRESHOLD else 0,
+                    self.joystick_y / 3 if abs(self.joystick_y) > CleanSweep.JOYSTICK_THRESHOLD else 0,
+                    CleanSweep.JOYSTICK_SCALE_RADIUS
+                )
+            else:
+                self.move_joystick.on(
+                    self.joystick_x if abs(self.joystick_x) > CleanSweep.JOYSTICK_THRESHOLD else 0,
+                    self.joystick_y if abs(self.joystick_y) > CleanSweep.JOYSTICK_THRESHOLD else 0,
+                    CleanSweep.JOYSTICK_SCALE_RADIUS
+                )
+
 
             if PS4Keymap.BTN_L1.value in active_keys:
                 self.opening_motor.on(CleanSweep.OPENING_MOTOR_SPEED)
@@ -117,8 +127,16 @@ class CleanSweep:
             else:
                 self.opening_motor.stop()
 
+            if PS4Keymap.BTN_CROSS.value in active_keys:
+                if self.reduce_movejoystick_speed == False:
+                    logging.info("{}MoveJoystick speed reduced.".format(CODE_FG_GREEN))
+                    self.reduce_movejoystick_speed = True
+                else:
+                    logging.info("{}MoveJoystick speed back to normal.".format(CODE_FG_GREEN))
+                    self.reduce_movejoystick_speed = False
+
+
     def run_auto_mode(self, detected_obj_location):
-        logging.debug("run_auto_mode(detected_obj_location={})".format(detected_obj_location))
         if detected_obj_location == 0:
             self.move_joystick.on(
                 0, # go straight

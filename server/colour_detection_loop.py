@@ -12,7 +12,7 @@ from time import time_ns
 import flask_socketio
 import socket
 
-VIDEO_CAPTURE_DEVICE_INDEX = 2
+VIDEO_CAPTURE_DEVICE_INDEX = 0
 SOCKETIO_EVENT_NAME = "data-url"
 SEND_TO_EV3_EVERY = 250 * pow(10, 6) # nanoseconds (milliseconds * 10^6)
 
@@ -20,8 +20,8 @@ def ndarray_to_b64(ndarray: numpy.typing.NDArray):
     return base64.b64encode(ndarray.tobytes()).decode()
 
 
-# def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
-def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
+def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
+# def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
     capture = cv2.VideoCapture(VIDEO_CAPTURE_DEVICE_INDEX)
 
     if not capture.isOpened():
@@ -42,7 +42,7 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
             logging.error("Could not read frame.")
             return
 
-        (processed_frame, red_detected_objects, blue_detected_objects) = detect_colour_and_draw(raw_frame, midpoint_x)
+        (processed_frame, red_detected_objects) = detect_colour_and_draw(raw_frame, midpoint_x)
 
         (retval, jpg_image) = cv2.imencode(".jpg", processed_frame)
 
@@ -53,15 +53,14 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
         socketio_app.emit(SOCKETIO_EVENT_NAME, {
             "b64ImageData": ndarray_to_b64(jpg_image),
             "redDetectedObjects": red_detected_objects,
-            "blueDetectedObjects": blue_detected_objects
         })
 
 
-        # if (now - last) < SEND_TO_EV3_EVERY:
-        #     continue
-        # last = now
+        if (now - last) < SEND_TO_EV3_EVERY:
+            continue
+        last = now
 
-        # try:
-        #     client_sock.sendall(stringify_json(detected_objects).encode())
-        # except OSError as e:
-        #     logging.error(f"`OSError` while sending data: {e}")
+        try:
+            client_sock.sendall(stringify_json(red_detected_objects).encode())
+        except OSError as e:
+            logging.error(f"`OSError` while sending data: {e}")
