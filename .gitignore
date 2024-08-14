@@ -1,5 +1,2 @@
-node_modules/
 .venv/
 __pycache__/
-ngrok.exe
-test_model/
