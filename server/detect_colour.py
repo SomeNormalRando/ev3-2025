@@ -75,6 +75,7 @@ def detect_colour_and_draw(frame: cv2.typing.MatLike, midpoint_x: int):
     mask_red2 = cv2.inRange(frame_hsv, LOWER_RED_2, UPPER_RED_2)
     # combine the two red masks
     mask_red = cv2.bitwise_or(mask_red1, mask_red2)
+    mask_blue = cv2.inRange(frame_hsv, LOWER_BLUE, UPPER_BLUE)
 
     # one range for blue = only one blue mask
     # mask_blue = cv2.inRange(frame_hsv, LOWER_BLUE, UPPER_BLUE)
@@ -100,7 +101,7 @@ def detect_colour_and_draw(frame: cv2.typing.MatLike, midpoint_x: int):
         detectedRedObjects.append((contour_centre, distance, location))
 
     # ? BLUE
-    '''
+
     detectedBlueObjects = []
     contours_blue, hierarchy_blue = cv2.findContours(mask_blue, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -116,15 +117,6 @@ def detect_colour_and_draw(frame: cv2.typing.MatLike, midpoint_x: int):
         (distance, location) = process_contour(contour, contour_centre, frame, midpoint_x, (255, 0, 0), RED_REAL_OBJECT_WIDTH)
 
         detectedBlueObjects.append((contour_centre, distance, location))
-    '''
+
 
     return (frame, detectedRedObjects)
-    # # Display the frame
-    # cv2.imshow("Frame", frame)
-
-    # # Exit on pressing 'q'
-    # if cv2.waitKey(1) & 0xFF == ord('q'):
-    #     break
-
-# capt.release()
-# cv2.destroyAllWindows()
