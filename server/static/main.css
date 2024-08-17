@@ -19,9 +19,13 @@ main {
 	justify-content: center;
 	flex-flow: wrap;
 }
-section {
+#sidebar {
 	display: block;
 	text-align: left;
+	margin: 1rem
+}
+.sidebar-section{
+	margin: 2rem 0;
 }
 video, img {
 	border: 1.5px var(--fg-col) dashed;
@@ -44,13 +48,22 @@ button:enabled:hover {
 button:disabled:hover {
 	cursor: not-allowed;
 }
-main p {
+main h2 {
+	margin: 0;
+}
+main {
 	font-family: monospace;
-	font-size: 1.2rem;
+	font-size: 1rem;
+	margin: 0;
 }
 main p > span {
 	font-weight: bold;
-	font-size: 2rem;
+	font-size: 1.4rem;
+}
+.colour-box {
+	display: inline-block;
+	width: 2rem;
+	height: 2rem;
 }
 #div-status-indicators {
 	text-align: left;

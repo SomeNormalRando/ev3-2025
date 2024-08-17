@@ -1,24 +1,6 @@
 import cv2
-import numpy as np
 
-# lower and upper bounds for the colours in HSV
-# in HSV, there are two sections of red (start & end) and one section of blue
-LOWER_RED_1 = np.array([0, 150, 150])
-UPPER_RED_1 = np.array([10, 255, 255])
-LOWER_RED_2 = np.array([170, 150, 150])
-UPPER_RED_2 = np.array([180, 255, 255])
-
-LOWER_BLUE = np.array([90, 50, 70])
-UPPER_BLUE = np.array([120, 255, 255])
-
-RED_REAL_OBJECT_WIDTH = 1.5
-BLUE_REAL_OBJECT_WIDTH = 8.5
-
-# focal length of the camera
-FOCAL_LENGTH = 500
-
-MIN_CONTOUR_AREA = 500
-CENTRE_RANGE = 25
+from config import RED_REAL_OBJECT_WIDTH, BLUE_REAL_OBJECT_WIDTH, FOCAL_LENGTH, MIN_CONTOUR_AREA, CENTRE_RANGE
 
 def process_contour(
         contour: cv2.typing.MatLike, contour_centre: tuple[int, int],
@@ -67,28 +49,26 @@ def get_contour_centre(contour):
     cY = int(M["m01"] / M["m00"])
     return cX, cY
 
-def detect_colour_and_draw(frame: cv2.typing.MatLike, midpoint_x: int):
+def detect_colour_and_draw(frame: cv2.typing.MatLike, midpoint_x: int, red1_lower, red1_upper, red2_lower, red2_upper, blue_lower, blue_upper):
     # Convert the frame to HSV
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    mask_red1 = cv2.inRange(frame_hsv, LOWER_RED_1, UPPER_RED_1)
-    mask_red2 = cv2.inRange(frame_hsv, LOWER_RED_2, UPPER_RED_2)
+    mask_red1 = cv2.inRange(frame_hsv, red1_lower, red2_lower)
+    mask_red2 = cv2.inRange(frame_hsv, red1_upper, red2_upper)
     # combine the two red masks
     mask_red = cv2.bitwise_or(mask_red1, mask_red2)
-    mask_blue = cv2.inRange(frame_hsv, LOWER_BLUE, UPPER_BLUE)
 
     # one range for blue = only one blue mask
-    # mask_blue = cv2.inRange(frame_hsv, LOWER_BLUE, UPPER_BLUE)
+    mask_blue = cv2.inRange(frame_hsv, blue_lower, blue_upper)
 
 
     # ! RED
-    detectedRedObjects = []
+    red_detected_objects = []
 
     contours_red, _ = cv2.findContours(mask_red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     # for i, contour in enumerate(contours_red):
     for contour in contours_red:
-        # skip if this contour is not larger than the minimum area or it is within another contour
-        # if cv2.contourArea(contour) < MIN_CONTOUR_AREA or hierarchy_red[0][i][3] != -1:
+        # skip if this contour is not larger than the minimum area 
         if cv2.contourArea(contour) < MIN_CONTOUR_AREA:
                 continue
 
@@ -98,15 +78,15 @@ def detect_colour_and_draw(frame: cv2.typing.MatLike, midpoint_x: int):
 
         (distance, location) = process_contour(contour, contour_centre, frame, midpoint_x, (0, 0, 255), RED_REAL_OBJECT_WIDTH)
 
-        detectedRedObjects.append((contour_centre, distance, location))
+        red_detected_objects.append((contour_centre, distance, location))
 
     # ? BLUE
 
-    detectedBlueObjects = []
+    blue_detected_objects = []
     contours_blue, hierarchy_blue = cv2.findContours(mask_blue, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     for i, contour in enumerate(contours_blue):
-        # skip if the contour is not larger than the minimum area
+        # skip if the contour is not larger than the minimum area or it is within another contour
         if cv2.contourArea(contour) < MIN_CONTOUR_AREA or hierarchy_blue[0][i][3] != -1:
                 continue
 
@@ -114,9 +94,9 @@ def detect_colour_and_draw(frame: cv2.typing.MatLike, midpoint_x: int):
         if contour_centre is None:
             continue
 
-        (distance, location) = process_contour(contour, contour_centre, frame, midpoint_x, (255, 0, 0), RED_REAL_OBJECT_WIDTH)
+        (distance, location) = process_contour(contour, contour_centre, frame, midpoint_x, (255, 0, 0), BLUE_REAL_OBJECT_WIDTH)
 
-        detectedBlueObjects.append((contour_centre, distance, location))
+        blue_detected_objects.append((contour_centre, distance, location))
 
 
-    return (frame, detectedRedObjects)
+    return (frame, red_detected_objects, blue_detected_objects)

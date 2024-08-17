@@ -9,17 +9,69 @@
 
 	<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 	<script src="static/js/interface.js" type="module" defer></script>
+	<script src="static/js/util.js" type="module" defer></script>
 </head>
 <body>
 	<h1>Clean-Sweep Web Interface</h1>
 	<main>
-		<img id="img-el">
-		<section>
-			<p>FPS: <span id="fps-number-display"></span></p>
-			<p>Detections: <span id="red-detections-number-display"></span>
-			<!-- <p>Detections (blue): <span id="blue-detections-number-display"></span> -->
+	<img id="img-el">
+	<div id="sidebar">
+		<div class="sidebar-section">
+			<p>FPS: <span id="fps-number"></span></p>
+		</div>
+		
+		<div class="sidebar-section">
+			<h2>Colour A</h2>
+			<p>Detections: <span id="red-detections-number"></span></p>
+			<div>
+				<div class="colour-box" id="colbox-red1lower"></div>
+				
+				<span>lower 1 -</span>
+				<label for="r1-l-h">H: </label>
+				<input id="r1-l-h" type="number" min="0" max="255">
+				<label for="r1-l-s">S: </label>
+				<input id="r1-l-s" type="number" min="0" max="255">
+				<label for="r1-l-v">V: </label>
+				<input id="r1-l-v" type="number" min="0" max="255">
+			</div>
+			<div>
+				<div class="colour-box" id="colbox-red1upper"></div>
+				
+				<span>upper 1 -</span>
+				<label for="r1-u-h">H: </label>
+				<input id="r1-u-h" type="number" min="0" max="255">
+				<label for="r1-u-s">S: </label>
+				<input id="r1-u-s" type="number" min="0" max="255">
+				<label for="r1-u-v">V: </label>
+				<input id="r1-u-v" type="number" min="0" max="255">
+			</div>
+		</div>
+		<div class="sidebar-section">
+			<div>
+				<div class="colour-box" id="colbox-red2lower"></div>
+				<span>lower 2 -</span>
+				<label for="r2-l-h">H: </label>
+				<input id="r2-l-h" type="number" min="0" max="255">
+				<label for="r2-l-s">S: </label>
+				<input id="r2-l-s" type="number" min="0" max="255">
+				<label for="r2-l-v">V: </label>
+				<input id="r2-l-v" type="number" min="0" max="255">
+			</div>
+			<div>
+				<div class="colour-box" id="colbox-red2upper"></div>
 
-		</section>
+				<span>upper 2 -</span>
+				<label for="r2-u-h">H: </label>
+				<input id="r2-u-h" type="number" min="0" max="255">
+				<label for="r2-u-s">S: </label>
+				<input id="r2-u-s" type="number" min="0" max="255">
+				<label for="r2-u-v">V: </label>
+				<input id="r2-u-v" type="number" min="0" max="255">
+			</div>
+		</div>
+		<h2>Colour B</h2>
+		<p>Detections: <span id="blue-detections-number"></span></p>
+	</div>
 	</main>
 </body>
 </html>

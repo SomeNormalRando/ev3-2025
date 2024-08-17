@@ -1,38 +1,142 @@
 /* eslint-env browser */
 /* global io */
-/* eslint-disable no-console */
+/* eslint-disable no-console, camelcase */
 
-const SOCKETIO_EVENT_NAME = "data-url";
+import { HSVtoRGB, calcFPS } from "./util.js";
+
+const EVNAME_RECEIVE_IMAGE = "data-url";
+const EVNAME_RECEIVE_DEFAULT_HSV_COLOURS = "default-hsv-colours";
+const EVNAME_SEND_HSV_COLOURS_UPDATE = "hsv-colours-update";
 const B64_PREFIX = "data:image/jpeg;base64,";
-const UPDATE_FPS_EVERY_MS = 250;
+
+const imgEl = document.getElementById("img-el");
+const fpsNumber = document.getElementById("fps-number");
+const redDetectionsNumber = document.getElementById("red-detections-number");
+const blueDetectionsNumber = document.getElementById("blue-detections-number");
 
 const socket = io();
 
-const imgEl = document.getElementById("img-el");
-const fpsNumberDisplay = document.getElementById("fps-number-display");
-const redDetectionsNumberDisplay = document.getElementById("red-detections-number-display");
-// const blueDetectionsNumberDisplay = document.getElementById("blue-detections-number-display");
+const coloursObj = {
+	red1lower: {
+		channels: {
+			h: { elID: "r1-l-h", curVal: -1, inputEl: null },
+			s: { elID: "r1-l-s", curVal: -1, inputEl: null },
+			v: { elID: "r1-l-v", curVal: -1, inputEl: null },
+		},
+		colBox: { elID: "colbox-red1lower", el: null },
+	},
+	red1upper: {
+		channels: {
+			h: { elID: "r1-u-h", curVal: -1, inputEl: null },
+			s: { elID: "r1-u-s", curVal: -1, inputEl: null },
+			v: { elID: "r1-u-v", curVal: -1, inputEl: null },
+		},
+		colBox: { elID: "colbox-red1upper", el: null },
+	},
+	red2lower: {
+		channels: {
+			h: { elID: "r2-l-h", curVal: -1, inputEl: null },
+			s: { elID: "r2-l-s", curVal: -1, inputEl: null },
+			v: { elID: "r2-l-v", curVal: -1, inputEl: null },
+		},
+		colBox: { elID: "colbox-red2lower", el: null },
+	},
+	red2upper: {
+		channels: {
+			h: { elID: "r2-u-h", curVal: -1, inputEl: null },
+			s: { elID: "r2-u-s", curVal: -1, inputEl: null },
+			v: { elID: "r2-u-v", curVal: -1, inputEl: null },
+		},
+		colBox: { elID: "colbox-red2upper", el: null },
+	},
+};
 
-let last = performance.now();
-let numFramesSinceLast = 0;
+for (const [colName, col] of Object.entries(coloursObj)) {
+	const colBoxElement = document.getElementById(col.colBox.elID);
+	col.colBox.el = colBoxElement;
 
-socket.on(SOCKETIO_EVENT_NAME, ({ b64ImageData, redDetectedObjects }) => {
+	for (const colChannel of Object.values(col.channels)) {
+		const inputElement = document.getElementById(colChannel.elID);
+
+		inputElement.addEventListener("input", (ev) => {
+			// ev.target.value is a string
+			colChannel.curVal = parseInt(ev.target.value, 10);
+
+			const colHSV = [col.channels.h.curVal, col.channels.s.curVal, col.channels.v.curVal];
+
+			// CSS doesn't support direct HSV representation -- only RGB and HSL
+			const colRGB = HSVtoRGB(...colHSV);
+			colBoxElement.style.backgroundColor = `rgb(${colRGB[0]}, ${colRGB[1]}, ${colRGB[2]})`;
+
+			// send new HSV colours to server
+			socket.emit(EVNAME_SEND_HSV_COLOURS_UPDATE, colName, colHSV);
+		});
+
+		inputElement.addEventListener("wheel", (ev) => {
+			const currentVal = parseInt(ev.target.value, 10);
+			if (ev.deltaY < 0) {
+				if ((currentVal + 2) > 255) return;
+				ev.target.value = currentVal + 2;
+			} else {
+				if ((currentVal - 2) < 0) return;
+				ev.target.value = currentVal - 2;
+			}
+
+			const inputEvent = new Event("input");
+			ev.target.dispatchEvent(inputEvent);
+		});
+
+		colChannel.inputEl = inputElement;
+	}
+}
+
+socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
+	console.log("received default HSV colours from server:", receivedColours);
+
+	const {
+		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER,
+	} = receivedColours;
+
+	const {
+		red1lower: { channels: red1lowerC },
+		red1upper: { channels: red1upperC },
+		red2upper: { channels: red2upperC },
+		red2lower: { channels: red2lowerC },
+	} = coloursObj;
+	[red1lowerC.h.curVal, red1lowerC.s.curVal, red1lowerC.v.curVal] = RED1_LOWER;
+
+	[
+		red1lowerC.h.inputEl.value, red1lowerC.s.inputEl.value, red1lowerC.v.inputEl.value,
+	] = RED1_LOWER;
+	[red1upperC.h.curVal, red1upperC.s.curVal, red1upperC.v.curVal] = RED1_UPPER;
+	[
+		red1upperC.h.inputEl.value, red1upperC.s.inputEl.value, red1upperC.v.inputEl.value,
+	] = RED1_UPPER;
+
+	[red2lowerC.h.curVal, red2lowerC.s.curVal, red2lowerC.v.curVal] = RED2_LOWER;
+	[
+		red2lowerC.h.inputEl.value, red2lowerC.s.inputEl.value, red2lowerC.v.inputEl.value,
+	] = RED2_LOWER;
+	[red2upperC.h.curVal, red2upperC.s.curVal, red2upperC.v.curVal] = RED2_UPPER;
+	[
+		red2upperC.h.inputEl.value, red2upperC.s.inputEl.value, red2upperC.v.inputEl.value,
+	] = RED2_UPPER;
+
+	// dispatch `input` event to every <input> to update colour boxes
+	const event = new Event("input");
+	for (const col of Object.values(coloursObj)) {
+		for (const colChannel of Object.values(col.channels)) {
+			colChannel.inputEl.dispatchEvent(event);
+		}
+	}
+});
+
+
+socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData, redDetectedObjects, blueDetectedObjects }) => {
 	imgEl.src = `${B64_PREFIX}${b64ImageData}`;
 
-	// console.log(detectedObjects)
-	redDetectionsNumberDisplay.innerText = redDetectedObjects.length;
-	// blueDetectionsNumberDisplay.innerText = blueDetectedObjects.length;
+	redDetectionsNumber.innerText = redDetectedObjects.length;
+	blueDetectionsNumber.innerText = blueDetectedObjects.length;
 
-	const now = performance.now();
-	if ((now - last) <= UPDATE_FPS_EVERY_MS) {
-		numFramesSinceLast += 1;
-		return;
-	}
-
-	const timeDiff = (now - last) / 1000;
-	const fpsUnrounded = 1 / (timeDiff / numFramesSinceLast);
-
-	fpsNumberDisplay.innerText = Math.round(fpsUnrounded * 100) / 100;
-	last = now;
-	numFramesSinceLast = 0;
+	fpsNumber.innerText = calcFPS();
 });
