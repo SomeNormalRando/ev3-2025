@@ -1,21 +1,27 @@
-CODE_FG_GREEN = "\x1b[32m"
+from config import RECEIVE_FROM_SERVER_INTERVAL, COL_CODE_DEBUG, COL_CODE_FG_GREEN
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("CleanSweep")
 
 logger.info("loading modules...")
 
 import evdev # type: ignore
 from PS4Keymap import PS4Keymap
 # from datetime import datetime
-from time import sleep
+from time import sleep, time
 
 from ev3dev2.motor import MoveJoystick, LargeMotor, MediumMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C
 from ev3dev2 import DeviceNotFound
 
-from typing import Tuple
+from enum import Enum
+from typing import Tuple, Union
 
 logger.info("modules loaded")
+
+class ForwardOrLeftOrRight(Enum):
+    left = -1
+    forward = 0
+    right = 1
 
 class CleanSweep:
     '''
@@ -42,9 +48,14 @@ class CleanSweep:
         self.joystick_y = 0.0
 
         self.auto_mode = False
+        self.closest_detected_obj = None # type: Union[None, Tuple[list[int], int, ForwardOrLeftOrRight]]
 
-        self.connected_to_server = False
-        self.closest_detected_obj = None
+        # counts how many times robot has moved forward / turned since auto mode started
+        # self.forward_count = 0 # positive only
+        # self.turn_count = 0 # sum of all lefts (-1) and rights (1), can be negative
+
+        # list of every forward (0) / left (-1) / right (1) movement the robot has taken since the start of auto mode
+        self.movements = [] # type: list[ForwardOrLeftOrRight]
 
         self.reduce_movejoystick_speed = False
 
@@ -81,53 +92,58 @@ class CleanSweep:
 
     def activekeys_loop(self):
         logger.info("started active_keys loop")
+
+        last = 0
+        now = 0
+
         while True:
             self.active_keys = self.controller.active_keys()
+
             if self.auto_mode is True:
+                now = time() * 1000.0
+                while (now - last) < RECEIVE_FROM_SERVER_INTERVAL:
+                    sleep(0.01)
+                    now = time() * 1000.0
+                last = now
+
                 self.run_auto_mode()
             else:
+                if PS4Keymap.BTN_R1.value in self.active_keys:
+                    self.auto_mode = True
+                    logger.info("{}[R1] automatic mode ACTIVATED - controller disabled".format(COL_CODE_FG_GREEN))
+                    continue
+
                 self.run_motors()
 
     def run_auto_mode(self):
         if PS4Keymap.BTN_R2.value in self.active_keys:
+            logger.info("{}[R2] robot retracing steps...".format(COL_CODE_FG_GREEN))
+
+            self.retrace_steps()
+
+            logger.info("{}robot finished retracing steps".format(COL_CODE_FG_GREEN))
+
+            logger.info("{}automatic mode STOPPED - controller enabled".format(COL_CODE_FG_GREEN))
             self.auto_mode = False
-            logger.info("{}automatic mode STOPPED - controller enabled".format(CODE_FG_GREEN))
             return
 
         # if no detected objects, go straight
-        detected_obj_location_id = 0
+        detected_obj_location_id = ForwardOrLeftOrRight.forward
 
-        if self.closest_detected_obj is not None:
+        if self.closest_detected_obj is None:
+            logger.debug("{}self.closest_detected_obj is None".format(COL_CODE_DEBUG))
+        else:
             # data format: [[centre_x, centre_y], distance, location]
             detected_obj_location_id = self.closest_detected_obj[2]
+            logger.debug("{}detected_obj_location_id: {}".format(COL_CODE_DEBUG, detected_obj_location_id))
 
-        if detected_obj_location_id == 0:
-            self.move_joystick.on(
-                0, # go straight
-                CleanSweep._AUTO_FORWARD_SPEED,
-                CleanSweep.JOYSTICK_SCALE_RADIUS
-            )
-        elif detected_obj_location_id == -1:
-            self.move_joystick.on(
-                -CleanSweep._AUTO_FORWARD_SPEED, # turn left
-                0,
-                CleanSweep.JOYSTICK_SCALE_RADIUS
-            )
-        elif detected_obj_location_id == 1:
-            self.move_joystick.on(
-                CleanSweep._AUTO_FORWARD_SPEED, # turn right
-                0,
-                CleanSweep.JOYSTICK_SCALE_RADIUS
-            )
-        else:
-            logger.warning("run_auto_mode(): `detected_obj_location_id` is not -1, 0, or 1")
+
+        self.move_forward_or_turn(detected_obj_location_id)
+
+
+        self.movements.append(detected_obj_location_id)
 
     def run_motors(self):
-        if PS4Keymap.BTN_R1.value in self.active_keys:
-            self.auto_mode = True
-            logger.info("{}automatic mode ACTIVATED - controller disabled".format(CODE_FG_GREEN))
-            return
-
         # MOTORS
         if self.reduce_movejoystick_speed == True:
             self.move_joystick.on(
@@ -151,12 +167,61 @@ class CleanSweep:
 
         if PS4Keymap.BTN_CROSS.value in self.active_keys:
             if self.reduce_movejoystick_speed == False:
-                logger.info("{}MoveJoystick speed - REDUCED".format(CODE_FG_GREEN))
+                logger.info("{}[X] MoveJoystick speed - REDUCED".format(COL_CODE_FG_GREEN))
                 self.reduce_movejoystick_speed = True
             else:
-                logger.info("{}MoveJoystick speed - NORMAL".format(CODE_FG_GREEN))
+                logger.info("{}[X] MoveJoystick speed - NORMAL".format(COL_CODE_FG_GREEN))
                 self.reduce_movejoystick_speed = False
 
+    def retrace_steps(self):
+        last = 0
+        now = 0
+
+        logger.debug("{}`retrace_steps` - `self.movements` = {}".format(COL_CODE_DEBUG, self.movements))
+
+        reversed_movements = reversed(self.movements)
+        for (index, movement_id) in enumerate(reversed_movements):
+            logger.debug("{}`retrace_steps` - movement {}".format(COL_CODE_DEBUG, index))
+
+            # time_ns() was added in 3.7, ev3dev runs 3.5.3
+            now = time() * 1000.0
+            while (now - last) < RECEIVE_FROM_SERVER_INTERVAL:
+                sleep(0.01)
+                now = time() * 1000.0
+            last = now
+
+            if movement_id == ForwardOrLeftOrRight.forward:
+                self.move_joystick.on(
+                    0, # go backwards
+                    -CleanSweep._AUTO_FORWARD_SPEED,
+                    CleanSweep.JOYSTICK_SCALE_RADIUS
+                )
+            elif movement_id == ForwardOrLeftOrRight.left:
+                self.move_forward_or_turn(ForwardOrLeftOrRight.right)
+            elif movement_id == ForwardOrLeftOrRight.right:
+                self.move_forward_or_turn(ForwardOrLeftOrRight.left)
+
+        self.movements = []
+
+    def move_forward_or_turn(self, movement_type: ForwardOrLeftOrRight):
+        if movement_type == ForwardOrLeftOrRight.forward:
+            self.move_joystick.on(
+                0, # go straight
+                CleanSweep._AUTO_FORWARD_SPEED,
+                CleanSweep.JOYSTICK_SCALE_RADIUS
+            )
+        elif movement_type == ForwardOrLeftOrRight.left:
+            self.move_joystick.on(
+                -CleanSweep._AUTO_FORWARD_SPEED, # turn left (in place)
+                0,
+                CleanSweep.JOYSTICK_SCALE_RADIUS
+            )
+        elif movement_type == ForwardOrLeftOrRight.right:
+            self.move_joystick.on(
+                CleanSweep._AUTO_FORWARD_SPEED, # turn right (in place)
+                0,
+                CleanSweep.JOYSTICK_SCALE_RADIUS
+            )
     #region static methods
     @staticmethod
     def scale_range(val: float, src: Tuple[float, float], dst: Tuple[float, float]):

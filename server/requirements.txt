@@ -1,7 +1,9 @@
 bidict==0.23.1
 blinker==1.8.2
+cffi==1.17.0
 click==8.1.7
 colorama==0.4.6
+cryptography==43.0.0
 Flask==3.0.3
 Flask-SocketIO==5.3.6
 h11==0.14.0
@@ -10,6 +12,7 @@ Jinja2==3.1.4
 MarkupSafe==2.1.5
 numpy==2.0.1
 opencv-python==4.10.0.84
+pycparser==2.22
 python-engineio==4.9.1
 python-socketio==5.11.3
 simple-websocket==1.0.0

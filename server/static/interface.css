@@ -1,0 +1,25 @@
+main {
+	display: flex;
+	justify-content: center;
+	flex-flow: wrap;
+}
+#sidebar {
+	display: block;
+	text-align: left;
+	margin: 0 1rem
+}
+.sidebar-section{
+	margin-bottom: 2rem;
+}
+main h2 {
+	margin: 0;
+}
+main p > span {
+	font-weight: bold;
+	font-size: 1.4rem;
+}
+.colour-box {
+	display: inline-block;
+	width: 2rem;
+	height: 2rem;
+}

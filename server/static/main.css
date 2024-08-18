@@ -8,24 +8,16 @@ body {
 	color: var(--fg-col);
 	font-family: system-ui, sans-serif;
 }
+main {
+	font-family: monospace;
+	font-size: 1rem;
+	margin: 0;
+}
 a {
 	color: gold;
 }
 a:hover {
 	color: goldenrod
-}
-main {
-	display: flex;
-	justify-content: center;
-	flex-flow: wrap;
-}
-#sidebar {
-	display: block;
-	text-align: left;
-	margin: 0 1rem
-}
-.sidebar-section{
-	margin-bottom: 2rem;
 }
 video, img {
 	border: 1.5px var(--fg-col) dashed;
@@ -48,39 +40,4 @@ button:enabled:hover {
 button:disabled:hover {
 	cursor: not-allowed;
 }
-main h2 {
-	margin: 0;
-}
-main {
-	font-family: monospace;
-	font-size: 1rem;
-	margin: 0;
-}
-main p > span {
-	font-weight: bold;
-	font-size: 1.4rem;
-}
-.colour-box {
-	display: inline-block;
-	width: 2rem;
-	height: 2rem;
-}
-#div-status-indicators {
-	text-align: left;
-}
-.status-indicator-title {
-	text-transform: uppercase;
-	font-family: monospace;
-	font-weight: bold;
-	letter-spacing: 0.1rem;
-	font-size: 0.8rem;
-}
-.status-code-0 {
-	color: red;
-}
-.status-code-1 {
-	color: cornflowerblue;
-}
-.status-code-2 {
-	color: green;
-}
+

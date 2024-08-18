@@ -15,13 +15,13 @@ import logging
 logger = logging.getLogger(__name__)
 socketio_logger = logging.getLogger("socket.io")
 
-from config import col_dict, VIDEO_CAPTURE_DEVICE_INDEX, EVNAME_SEND_IMAGE, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_HSV_COLOURS_UPDATE, SEND_TO_EV3_EVERY
+from config import col_dict, VIDEO_CAPTURE_DEVICE_INDEX, EVNAME_SEND_IMAGE, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_HSV_COLOURS_UPDATE, SEND_TO_EV3_INTERVAL
 
 def ndarray_to_b64(ndarray: numpy.typing.NDArray):
     return base64.b64encode(ndarray.tobytes()).decode()
 
-# def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
-def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
+def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
+# def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
     logger.info("started colour_detection_loop")
 
     @socketio_app.on(EVNAME_RECEIVE_HSV_COLOURS_UPDATE)
@@ -76,11 +76,11 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
         })
 
 
-        # if (now - last) < SEND_TO_EV3_EVERY:
-        #     continue
+        if (now - last) < SEND_TO_EV3_INTERVAL:
+            continue
 
-        # last = now
-        # try:
-        #     client_sock.sendall(stringify_json(red_detected_objects).encode())
-        # except OSError as e:
-        #     logger.error(f"`OSError` while sending data: {e}")
+        last = now
+        try:
+            client_sock.sendall(stringify_json(red_detected_objects).encode())
+        except OSError as e:
+            logger.error(f"`OSError` while sending data: {e}")

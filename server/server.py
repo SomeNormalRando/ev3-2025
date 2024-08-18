@@ -8,7 +8,7 @@ from flask_socketio import SocketIO, emit
 
 import socket
 from colour_detection_loop import colour_detection_loop
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from config import SERVER_RUN_PARAMS, BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL, do_bluetooth, EVNAME_SEND_DEFAULT_HSV_COLOURS, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL
 
@@ -26,7 +26,7 @@ socketio_logger.setLevel(SOCKETIO_LOGGER_LEVEL)
 
 # werkzeug logs all incoming connections at level logging.INFO, so set level to logging.ERROR to disable it
 werkzeug_logger = logging.getLogger("werkzeug")
-werkzeug_logger.setLevel(logging.ERROR)
+# werkzeug_logger.setLevel(logging.ERROR)
 
 
 flask_app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -53,10 +53,14 @@ def interface():
     logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /interface")
     return render_template("interface.html")
 
-@flask_app.route("/camera")
-def camera():
-    logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /camera")
-    return render_template("camera.html")
+@flask_app.route("/gyro")
+def gyro():
+    logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /gyro")
+    return render_template("gyro.html")
+
+@flask_app.route("/favicon.ico")
+def favicon():
+    return redirect(url_for("static", filename="favicon.ico"))
 # endregion
 
 @socketio_app.on("connect")
@@ -80,8 +84,8 @@ if (do_bluetooth is False):
     print()
     future2 = executor.submit(socketio_app.run, app=flask_app, **SERVER_RUN_PARAMS)
 
-    logger.error(f"`future` for `colour_detection_loop`: {future.result()}")
-    logger.error(f"`future` for `socketio_app.run`: {future2.result()}")
+    for f in as_completed([future, future2]):
+        logger.error(f"`future` returned result: {f.result()}")
 
 # executes if do_bluetooth is True
 with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as server_sock:
@@ -99,11 +103,11 @@ with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOM
     bl_logger.debug(f"\x1b[30m`client_sock`: {client_sock}, address {address}")
     bl_logger.debug(f"\x1b[30m`server_sock`: {server_sock}")
 
-    executor = ThreadPoolExecutor(max_workers=1)
+    executor = ThreadPoolExecutor(max_workers=2)
     future = executor.submit(colour_detection_loop, socketio_app, client_sock)
 
     print()
     future2 = executor.submit(socketio_app.run, app=flask_app, **SERVER_RUN_PARAMS)
 
-    logger.error(f"`future` for `colour_detection_loop`: {future.result()}")
-    logger.error(f"`future` for `socketio_app.run`: {future2.result()}")
+    for f in as_completed([future, future2]):
+        logger.error(f"`future` returned result: {f.result()}")

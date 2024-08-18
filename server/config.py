@@ -1,11 +1,10 @@
 SERVER_RUN_PARAMS = {
-    # "app": flask_app,
     "host": "0.0.0.0",
     "port": 8000,
     "debug": True,
     "use_reloader": False,
     "log_output": True,
-    # generate self-signed SSL certificate (so that getUserMedia isn't auto-disabled in browsers)
+    # generate self-signed SSL certificate (so that JavaScript Web APIs that require HTTPS work)
     # "ssl_context": "adhoc"
 }
 
@@ -16,7 +15,7 @@ SERVER_RUN_PARAMS = {
 BLUETOOTH_ADDRESS = "60:F2:62:A9:D8:CC"
 BLUETOOTH_CHANNEL = 5 # random number
 
-do_bluetooth = False
+do_bluetooth = True
 
 VIDEO_CAPTURE_DEVICE_INDEX = 3
 
@@ -25,7 +24,7 @@ EVNAME_SEND_IMAGE = "data-url"
 EVNAME_SEND_DEFAULT_HSV_COLOURS = "default-hsv-colours"
 EVNAME_RECEIVE_HSV_COLOURS_UPDATE = "hsv-colours-update";
 
-SEND_TO_EV3_EVERY = 250 * pow(10, 6) # nanoseconds (milliseconds * 10^6)
+SEND_TO_EV3_INTERVAL = 250 * pow(10, 6) # nanoseconds (milliseconds * 10^6)
 
 import numpy as np
 # lower and upper bounds for the colours in HSV
