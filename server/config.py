@@ -18,7 +18,7 @@ BLUETOOTH_CHANNEL = 5 # random number
 
 do_bluetooth = False
 
-VIDEO_CAPTURE_DEVICE_INDEX = 2
+VIDEO_CAPTURE_DEVICE_INDEX = 3
 
 # socket.io event names
 EVNAME_SEND_IMAGE = "data-url"
@@ -29,6 +29,7 @@ SEND_TO_EV3_EVERY = 250 * pow(10, 6) # nanoseconds (milliseconds * 10^6)
 
 import numpy as np
 # lower and upper bounds for the colours in HSV
+# HSV range in cv2: H [0, 179], S [0, 255], [0, 255]
 # in HSV, there are two sections of red (start & end) and one section of blue
 RED1_LOWER = np.array([0, 150, 150])
 RED1_UPPER = np.array([10, 255, 255])

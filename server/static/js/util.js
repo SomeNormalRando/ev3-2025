@@ -1,9 +1,10 @@
 const UPDATE_FPS_EVERY_MS = 250;
 
 // from https://gist.github.com/mjackson/5311256
-export function HSVtoRGB(h255, s255, v255) {
-	// scale h, s and v values from a range of 0 - 255 to 0 - 1
-	const h = h255 / 255;
+export function HSVtoRGB(h180, s255, v255) {
+	// HSV range in cv2: H [0, 179], S [0, 255], [0, 255]
+	// scale H, S and V values to a range of [0, 1]
+	const h = h180 / 180;
 	const s = s255 / 255;
 	const v = v255 / 255;
 

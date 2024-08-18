@@ -1,4 +1,5 @@
 import cv2
+from cv2.typing import MatLike
 
 from config import RED_REAL_OBJECT_WIDTH, BLUE_REAL_OBJECT_WIDTH, FOCAL_LENGTH, MIN_CONTOUR_AREA, CENTRE_RANGE
 
@@ -49,12 +50,17 @@ def get_contour_centre(contour):
     cY = int(M["m01"] / M["m00"])
     return cX, cY
 
-def detect_colour_and_draw(frame: cv2.typing.MatLike, midpoint_x: int, red1_lower, red1_upper, red2_lower, red2_upper, blue_lower, blue_upper):
+def detect_colour_and_draw(
+    frame: MatLike, midpoint_x: int,
+    red1_lower: MatLike, red1_upper: MatLike,
+    red2_lower: MatLike, red2_upper:MatLike,
+    blue_lower: MatLike, blue_upper:MatLike
+):
     # Convert the frame to HSV
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    mask_red1 = cv2.inRange(frame_hsv, red1_lower, red2_lower)
-    mask_red2 = cv2.inRange(frame_hsv, red1_upper, red2_upper)
+    mask_red1 = cv2.inRange(frame_hsv, red1_lower, red1_upper)
+    mask_red2 = cv2.inRange(frame_hsv, red2_lower, red2_upper)
     # combine the two red masks
     mask_red = cv2.bitwise_or(mask_red1, mask_red2)
 

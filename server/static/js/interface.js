@@ -49,6 +49,22 @@ const coloursObj = {
 		},
 		colBox: { elID: "colbox-red2upper", el: null },
 	},
+	bluelower: {
+		channels: {
+			h: { elID: "b-l-h", curVal: -1, inputEl: null },
+			s: { elID: "b-l-s", curVal: -1, inputEl: null },
+			v: { elID: "b-l-v", curVal: -1, inputEl: null },
+		},
+		colBox: { elID: "colbox-bluelower", el: null },
+	},
+	blueupper: {
+		channels: {
+			h: { elID: "b-u-h", curVal: -1, inputEl: null },
+			s: { elID: "b-u-s", curVal: -1, inputEl: null },
+			v: { elID: "b-u-v", curVal: -1, inputEl: null },
+		},
+		colBox: { elID: "colbox-blueupper", el: null },
+	},
 };
 
 for (const [colName, col] of Object.entries(coloursObj)) {
@@ -73,12 +89,13 @@ for (const [colName, col] of Object.entries(coloursObj)) {
 		});
 
 		inputElement.addEventListener("wheel", (ev) => {
+			ev.preventDefault()
 			const currentVal = parseInt(ev.target.value, 10);
 			if (ev.deltaY < 0) {
-				if ((currentVal + 2) > 255) return;
+				if ((currentVal + 2) > ev.target.max) return;
 				ev.target.value = currentVal + 2;
 			} else {
-				if ((currentVal - 2) < 0) return;
+				if ((currentVal - 2) < ev.target.min) return;
 				ev.target.value = currentVal - 2;
 			}
 
@@ -94,7 +111,7 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 	console.log("received default HSV colours from server:", receivedColours);
 
 	const {
-		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER,
+		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER
 	} = receivedColours;
 
 	const {
@@ -102,6 +119,8 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 		red1upper: { channels: red1upperC },
 		red2upper: { channels: red2upperC },
 		red2lower: { channels: red2lowerC },
+		blueupper: { channels: blueupperC },
+		bluelower: { channels: bluelowerC },
 	} = coloursObj;
 	[red1lowerC.h.curVal, red1lowerC.s.curVal, red1lowerC.v.curVal] = RED1_LOWER;
 
@@ -121,6 +140,15 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 	[
 		red2upperC.h.inputEl.value, red2upperC.s.inputEl.value, red2upperC.v.inputEl.value,
 	] = RED2_UPPER;
+
+	[bluelowerC.h.curVal, bluelowerC.s.curVal, bluelowerC.v.curVal] = BLUE_LOWER;
+	[
+		bluelowerC.h.inputEl.value, bluelowerC.s.inputEl.value, bluelowerC.v.inputEl.value,
+	] = BLUE_LOWER;
+	[blueupperC.h.curVal, blueupperC.s.curVal, blueupperC.v.curVal] = BLUE_UPPER;
+	[
+		blueupperC.h.inputEl.value, blueupperC.s.inputEl.value, blueupperC.v.inputEl.value,
+	] = BLUE_UPPER;
 
 	// dispatch `input` event to every <input> to update colour boxes
 	const event = new Event("input");

@@ -28,7 +28,7 @@
 				
 				<span>lower 1 -</span>
 				<label for="r1-l-h">H: </label>
-				<input id="r1-l-h" type="number" min="0" max="255">
+				<input id="r1-l-h" type="number" min="0" max="180">
 				<label for="r1-l-s">S: </label>
 				<input id="r1-l-s" type="number" min="0" max="255">
 				<label for="r1-l-v">V: </label>
@@ -39,7 +39,7 @@
 				
 				<span>upper 1 -</span>
 				<label for="r1-u-h">H: </label>
-				<input id="r1-u-h" type="number" min="0" max="255">
+				<input id="r1-u-h" type="number" min="0" max="180">
 				<label for="r1-u-s">S: </label>
 				<input id="r1-u-s" type="number" min="0" max="255">
 				<label for="r1-u-v">V: </label>
@@ -51,7 +51,7 @@
 				<div class="colour-box" id="colbox-red2lower"></div>
 				<span>lower 2 -</span>
 				<label for="r2-l-h">H: </label>
-				<input id="r2-l-h" type="number" min="0" max="255">
+				<input id="r2-l-h" type="number" min="0" max="180">
 				<label for="r2-l-s">S: </label>
 				<input id="r2-l-s" type="number" min="0" max="255">
 				<label for="r2-l-v">V: </label>
@@ -62,15 +62,38 @@
 
 				<span>upper 2 -</span>
 				<label for="r2-u-h">H: </label>
-				<input id="r2-u-h" type="number" min="0" max="255">
+				<input id="r2-u-h" type="number" min="0" max="180">
 				<label for="r2-u-s">S: </label>
 				<input id="r2-u-s" type="number" min="0" max="255">
 				<label for="r2-u-v">V: </label>
 				<input id="r2-u-v" type="number" min="0" max="255">
 			</div>
 		</div>
-		<h2>Colour B</h2>
-		<p>Detections: <span id="blue-detections-number"></span></p>
+		<div class="sidebar-section">
+			<h2>Colour B</h2>
+			<p>Detections: <span id="blue-detections-number"></span></p>
+			<div>
+				<div class="colour-box" id="colbox-bluelower"></div>
+				<span>lower -</span>
+				<label for="b-l-h">H: </label>
+				<input id="b-l-h" type="number" min="0" max="180">
+				<label for="b-l-s">S: </label>
+				<input id="b-l-s" type="number" min="0" max="255">
+				<label for="b-l-v">V: </label>
+				<input id="b-l-v" type="number" min="0" max="255">
+			</div>
+			<div>
+				<div class="colour-box" id="colbox-blueupper"></div>
+
+				<span>upper -</span>
+				<label for="b-u-h">H: </label>
+				<input id="b-u-h" type="number" min="0" max="180">
+				<label for="b-u-s">S: </label>
+				<input id="b-u-s" type="number" min="0" max="255">
+				<label for="b-u-v">V: </label>
+				<input id="b-u-v" type="number" min="0" max="255">
+			</div>
+		</div>
 	</div>
 	</main>
 </body>
