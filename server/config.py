@@ -12,12 +12,12 @@ SERVER_RUN_PARAMS = {
 # JC's address: D8:12:65:88:74:74
 # ZJ's address: 60:F2:62:A9:D8:CC
 # YX's address: F8:89:D2:70:CA:BA
-BLUETOOTH_ADDRESS = "60:F2:62:A9:D8:CC"
+BLUETOOTH_ADDRESS = "E4:B3:18:64:F3:DD"
 BLUETOOTH_CHANNEL = 5 # random number
 
 do_bluetooth = False
 
-VIDEO_CAPTURE_DEVICE_INDEX = 3
+VIDEO_CAPTURE_DEVICE_INDEX = 2
 
 # socket.io event names
 EVNAME_SEND_IMAGE = "data-url"
