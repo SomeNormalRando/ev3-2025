@@ -58,6 +58,7 @@ def gyro():
     logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /gyro")
     return render_template("gyro.html")
 
+
 @flask_app.route("/favicon.ico")
 def favicon():
     return redirect(url_for("static", filename="favicon.ico"))
@@ -74,7 +75,7 @@ def handle_connect():
         "BLUE_LOWER": BLUE_LOWER.tolist(),
         "BLUE_UPPER": BLUE_UPPER.tolist(),
         "YELLOW_LOWER": YELLOW_LOWER.tolist(),
-        "YELLOW_UPPER": YELLOW_UPPER.tolist(),
+        "YELLOW_UPPER": YELLOW_UPPER.tolist()
 
 
     }, callback = (lambda _: socketio_logger.info("sent default HSV colours to client")))
