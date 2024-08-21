@@ -13,6 +13,7 @@ const imgEl = document.getElementById("img-el");
 const fpsNumber = document.getElementById("fps-number");
 const redDetectionsNumber = document.getElementById("red-detections-number");
 const blueDetectionsNumber = document.getElementById("blue-detections-number");
+const yellowDetectionsNumber = document.getElementById("yellow-detections-number");
 
 const socket = io();
 
@@ -65,6 +66,22 @@ const coloursObj = {
 		},
 		colBox: { elID: "colbox-blueupper", el: null },
 	},
+	yellowlower: {
+		channels: {
+			h: { elID: "y-l-h", curVal: -1, inputEl: null },
+			s: { elID: "y-l-s", curVal: -1, inputEl: null },
+			v: { elID: "y-l-v", curVal: -1, inputEl: null },
+		},
+		colBox: { elID: "colbox-yellowlower", el: null },
+	},
+	yellowupper: {
+		channels: {
+			h: { elID: "y-u-h", curVal: -1, inputEl: null },
+			s: { elID: "y-u-s", curVal: -1, inputEl: null },
+			v: { elID: "y-u-v", curVal: -1, inputEl: null },
+		},
+		colBox: { elID: "colbox-yellowupper", el: null },
+	},
 };
 
 for (const [colName, col] of Object.entries(coloursObj)) {
@@ -112,7 +129,7 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 	console.log("received default HSV colours from server:", receivedColours);
 
 	const {
-		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER
+		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, YELLOW_UPPER, YELLOW_LOWER
 	} = receivedColours;
 
 	const {
@@ -122,6 +139,8 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 		red2lower: { channels: red2lowerC },
 		blueupper: { channels: blueupperC },
 		bluelower: { channels: bluelowerC },
+		yellowupper : {channels : yellowupperC},
+		yellowlower : {channels : yellowlowerC}
 	} = coloursObj;
 	[red1lowerC.h.curVal, red1lowerC.s.curVal, red1lowerC.v.curVal] = RED1_LOWER;
 
@@ -151,6 +170,15 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 		blueupperC.h.inputEl.value, blueupperC.s.inputEl.value, blueupperC.v.inputEl.value,
 	] = BLUE_UPPER;
 
+	[yellowlowerC.h.curVal, yellowlowerC.s.curVal, yellowlowerC.v.curVal] = YELLOW_LOWER;
+	[
+		yellowlowerC.h.inputEl.value, yellowlowerC.s.inputEl.value, yellowlowerC.v.inputEl.value,
+	] = YELLOW_LOWER;
+	[yellowupperC.h.curVal, yellowupperC.s.curVal, yellowupperC.v.curVal] = YELLOW_UPPER;
+	[
+		yellowupperC.h.inputEl.value, yellowupperC.s.inputEl.value, yellowupperC.v.inputEl.value,
+	] = YELLOW_UPPER;
+
 	// dispatch `input` event to every <input> to update colour boxes
 	const event = new Event("input");
 	for (const col of Object.values(coloursObj)) {
@@ -161,11 +189,12 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 });
 
 
-socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData, redDetectedObjects, blueDetectedObjects }) => {
+socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData, redDetectedObjects, blueDetectedObjects , yellowDetectedObjects}) => {
 	imgEl.src = `${B64_PREFIX}${b64ImageData}`;
 
 	redDetectionsNumber.innerText = redDetectedObjects.length;
 	blueDetectionsNumber.innerText = blueDetectedObjects.length;
+	yellowDetectionsNumber.innerText = yellowDetectedObjects.length;
 
 	fpsNumber.innerText = calcFPS();
 });

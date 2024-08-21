@@ -6,7 +6,7 @@
         {
             "label": "server.py [run Flask server]",
             "type": "shell",
-            "command": ".venv\\scripts\\activate && python server.py",
+            "command": "python server.py",
             "problemMatcher": []
         },
         {
