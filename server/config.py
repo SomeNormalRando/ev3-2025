@@ -40,6 +40,9 @@ RED2_UPPER = np.array([180, 255, 255])
 BLUE_LOWER = np.array([90, 150, 150])
 BLUE_UPPER = np.array([120, 255, 255])
 
+YELLOW_UPPER = np.array([20, 100, 100])
+YELLOW_LOWER = np.array(([30, 225, 225]))
+
 col_dict = {
     "red1lower": RED1_LOWER,
     "red1upper": RED1_UPPER,
@@ -47,6 +50,8 @@ col_dict = {
     "red2upper": RED2_UPPER,
     "bluelower": BLUE_LOWER,
     "blueupper": BLUE_UPPER,
+    "yellowlower": YELLOW_LOWER,
+    "yellowupper": YELLOW_UPPER,
 }
 
 RED_REAL_OBJECT_WIDTH = 1.5

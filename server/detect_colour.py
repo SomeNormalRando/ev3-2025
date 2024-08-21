@@ -54,7 +54,8 @@ def detect_colour_and_draw(
     frame: MatLike, midpoint_x: int,
     red1_lower: MatLike, red1_upper: MatLike,
     red2_lower: MatLike, red2_upper:MatLike,
-    blue_lower: MatLike, blue_upper:MatLike
+    blue_lower: MatLike, blue_upper:MatLike,
+    yellow_upper: MatLike, yellow_lower: MatLike
 ):
     # Convert the frame to HSV
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -66,6 +67,7 @@ def detect_colour_and_draw(
 
     # one range for blue = only one blue mask
     mask_blue = cv2.inRange(frame_hsv, blue_lower, blue_upper)
+    mask_yellow = cv2.inRange(frame_hsv, yellow_upper, yellow_lower)
 
 
     # ! RED
@@ -103,6 +105,23 @@ def detect_colour_and_draw(
         (distance, location) = process_contour(contour, contour_centre, frame, midpoint_x, (255, 0, 0), BLUE_REAL_OBJECT_WIDTH)
 
         blue_detected_objects.append((contour_centre, distance, location))
+    
+    # ? YELLOW
 
+    yellow_detected_objects = []
+    contours_yellow, hierarchy_yellow = cv2.findContours(mask_yellow, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    return (frame, red_detected_objects, blue_detected_objects)
+    for i, contour in enumerate(contours_yellow):
+        # skip if the contour is not larger than the minimum area or it is within another contour
+        if cv2.contourArea(contour) < MIN_CONTOUR_AREA or hierarchy_yellow[0][i][3] != -1:
+                continue
+
+        contour_centre = get_contour_centre(contour)
+        if contour_centre is None:
+            continue
+
+        (distance, location) = process_contour(contour, contour_centre, frame, midpoint_x, (30, 255, 255), BLUE_REAL_OBJECT_WIDTH) #distance not that important
+
+        yellow_detected_objects.append((contour_centre, distance, location))
+
+    return (frame, red_detected_objects, blue_detected_objects, yellow_detected_objects)
