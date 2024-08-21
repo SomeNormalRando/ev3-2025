@@ -88,8 +88,9 @@ for (const [colName, col] of Object.entries(coloursObj)) {
 			socket.emit(EVNAME_SEND_HSV_COLOURS_UPDATE, colName, colHSV);
 		});
 
+		// increase / decrease <input> values using the mouse scroll wheel
 		inputElement.addEventListener("wheel", (ev) => {
-			ev.preventDefault()
+			ev.preventDefault();
 			const currentVal = parseInt(ev.target.value, 10);
 			if (ev.deltaY < 0) {
 				if ((currentVal + 2) > ev.target.max) return;

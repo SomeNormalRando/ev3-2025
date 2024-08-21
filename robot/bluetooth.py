@@ -17,10 +17,6 @@ def recv_loop(sock: socket.socket, robot: CleanSweep):
 
         raw_data = sock.recv(1024)
 
-        if not raw_data:
-            bl_logger.info("{}no `raw_data`, (likely disconnected)".format(BLUETOOTH_ADDRESS).format(COL_CODE_BL_LOGGER))
-            break
-
         data_str = raw_data.decode()
         bl_logger.debug("{}data received: {}".format(COL_CODE_DEBUG, data_str))
 
@@ -28,7 +24,8 @@ def recv_loop(sock: socket.socket, robot: CleanSweep):
         try:
             data_json = loads(data_str)
         except JSONDecodeError:
-            bl_logger.info("{}JSONDecodeError (this is normal, happens because `s.recv()` builds up unreceived data)".format(COL_CODE_DEBUG))
+            # `s.recv()` builds up previous unreceived data
+            bl_logger.info("{}JSONDecodeError (this is normal)".format(COL_CODE_DEBUG))
             continue
 
         if len(data_json) == 0:
