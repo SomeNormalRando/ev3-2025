@@ -10,7 +10,7 @@ import socket
 from colour_detection_loop import colour_detection_loop
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from config import SERVER_RUN_PARAMS, BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL, do_bluetooth, EVNAME_SEND_DEFAULT_HSV_COLOURS, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL, YELLOW_UPPER,YELLOW_LOWER
+from config import SERVER_RUN_PARAMS, BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL, do_bluetooth, EVNAME_SEND_DEFAULT_HSV_COLOURS, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, YELLOW_LOWER, YELLOW_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL
 
 import logging
 logging.basicConfig(
@@ -58,7 +58,6 @@ def gyro():
     logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /gyro")
     return render_template("gyro.html")
 
-
 @flask_app.route("/favicon.ico")
 def favicon():
     return redirect(url_for("static", filename="favicon.ico"))
@@ -75,9 +74,7 @@ def handle_connect():
         "BLUE_LOWER": BLUE_LOWER.tolist(),
         "BLUE_UPPER": BLUE_UPPER.tolist(),
         "YELLOW_LOWER": YELLOW_LOWER.tolist(),
-        "YELLOW_UPPER": YELLOW_UPPER.tolist()
-
-
+        "YELLOW_UPPER": YELLOW_UPPER.tolist(),
     }, callback = (lambda _: socketio_logger.info("sent default HSV colours to client")))
 
 if (do_bluetooth is False):

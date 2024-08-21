@@ -50,6 +50,10 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
     capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
+    if not capture.isOpened():
+        logger.error("could not open video stream")
+        return
+
     # Get the width of the video frame
     frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     midpoint_x = frame_width // 2 # double / is floor division
@@ -69,7 +73,13 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
             logger.error("could not read frame")
             return
 
-        (processed_frame, red_detected_objects, blue_detected_objects, yellow_detected_objects) = detect_colour_and_draw(raw_frame, midpoint_x, col_dict["red1lower"], col_dict["red1upper"], col_dict["red2lower"], col_dict["red2upper"], col_dict["bluelower"], col_dict["blueupper"], col_dict["yellowupper"], col_dict["yellowlower"])
+        (processed_frame, red_detected_objects, blue_detected_objects, yellow_detected_objects) = detect_colour_and_draw(
+            raw_frame, midpoint_x,
+            col_dict["red1lower"], col_dict["red1upper"],
+            col_dict["red2lower"], col_dict["red2upper"],
+            col_dict["bluelower"], col_dict["blueupper"],
+            col_dict["yellowlower"], col_dict["yellowupper"],
+        )
 
         (retval, jpg_image) = cv2.imencode(".jpg", processed_frame)
 
@@ -81,7 +91,6 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
             "b64ImageData": ndarray_to_b64(jpg_image),
             "redDetectedObjects": red_detected_objects,
             "blueDetectedObjects": blue_detected_objects,
-            "yellowDetectedObjects" : yellow_detected_objects
         })
 
 

@@ -13,7 +13,6 @@ const imgEl = document.getElementById("img-el");
 const fpsNumber = document.getElementById("fps-number");
 const redDetectionsNumber = document.getElementById("red-detections-number");
 const blueDetectionsNumber = document.getElementById("blue-detections-number");
-const yellowDetectionsNumber = document.getElementById("yellow-detections-number");
 
 const socket = io();
 
@@ -129,7 +128,7 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 	console.log("received default HSV colours from server:", receivedColours);
 
 	const {
-		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, YELLOW_UPPER, YELLOW_LOWER
+		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, YELLOW_LOWER, YELLOW_UPPER
 	} = receivedColours;
 
 	const {
@@ -139,8 +138,8 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 		red2lower: { channels: red2lowerC },
 		blueupper: { channels: blueupperC },
 		bluelower: { channels: bluelowerC },
-		yellowupper : {channels : yellowupperC},
-		yellowlower : {channels : yellowlowerC}
+		yellowupper: { channels: yellowupperC },
+		yellowlower: { channels: yellowlowerC },
 	} = coloursObj;
 	[red1lowerC.h.curVal, red1lowerC.s.curVal, red1lowerC.v.curVal] = RED1_LOWER;
 
@@ -170,7 +169,6 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 		blueupperC.h.inputEl.value, blueupperC.s.inputEl.value, blueupperC.v.inputEl.value,
 	] = BLUE_UPPER;
 
-	[yellowlowerC.h.curVal, yellowlowerC.s.curVal, yellowlowerC.v.curVal] = YELLOW_LOWER;
 	[
 		yellowlowerC.h.inputEl.value, yellowlowerC.s.inputEl.value, yellowlowerC.v.inputEl.value,
 	] = YELLOW_LOWER;
@@ -189,12 +187,11 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 });
 
 
-socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData, redDetectedObjects, blueDetectedObjects , yellowDetectedObjects}) => {
+socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData, redDetectedObjects, blueDetectedObjects }) => {
 	imgEl.src = `${B64_PREFIX}${b64ImageData}`;
 
 	redDetectionsNumber.innerText = redDetectedObjects.length;
 	blueDetectionsNumber.innerText = blueDetectedObjects.length;
-	yellowDetectionsNumber.innerText = yellowDetectedObjects.length;
 
 	fpsNumber.innerText = calcFPS();
 });

@@ -117,7 +117,7 @@ class CleanSweep:
                 self.run_motors()
 
     def run_auto_mode(self):
-        # Check if R2 button is pressed to stop automatic mode
+    # Check if R2 button is pressed to stop automatic mode
         if PS4Keymap.BTN_R2.value in self.active_keys:
             logger.info("{}automatic mode STOPPED - controller enabled".format(COL_CODE_FG_GREEN))
             self.auto_mode = False
@@ -141,27 +141,34 @@ class CleanSweep:
             detected_obj_direction = self.closest_detected_obj[2]
 
             if detected_obj_direction == -1:
-                # Turn left slightly while moving forward
-                self.move_joystick.on(-self._AUTO_FORWARD_SPEED, self._AUTO_FORWARD_SPEED, self.JOYSTICK_SCALE_RADIUS)
+                # Turn left slightly, then continue moving forward
                 logger.debug("{}Adjusting left".format(COL_CODE_DEBUG))
+                self.move_joystick.on(-self._AUTO_FORWARD_SPEED, 0, self.JOYSTICK_SCALE_RADIUS)
+                sleep(0.2)  # Sleep for 0.5 seconds during the left turn
+                self.move_joystick.on(0, 0, self.JOYSTICK_SCALE_RADIUS)  # Stop to process data
+                sleep(0.5)  # Additional sleep to process the data
 
             elif detected_obj_direction == 1:
-                # Turn right slightly while moving forward
-                self.move_joystick.on(self._AUTO_FORWARD_SPEED, self._AUTO_FORWARD_SPEED, self.JOYSTICK_SCALE_RADIUS)
+                # Turn right slightly, then continue moving forward
                 logger.debug("{}Adjusting right".format(COL_CODE_DEBUG))
-            
+                self.move_joystick.on(self._AUTO_FORWARD_SPEED, 0, self.JOYSTICK_SCALE_RADIUS)
+                sleep(0.2)  # Sleep for 0.5 seconds during the right turn
+                self.move_joystick.on(0, 0, self.JOYSTICK_SCALE_RADIUS)  # Stop to process data
+                sleep(0.5)  # Additional sleep to process the data
+
             else:
                 # If object is directly ahead, continue straight
-                self.move_joystick.on(0, self._AUTO_FORWARD_SPEED, self.JOYSTICK_SCALE_RADIUS)
                 logger.debug("{}Moving straight".format(COL_CODE_DEBUG))
+                self.move_joystick.on(0, self._AUTO_FORWARD_SPEED, self.JOYSTICK_SCALE_RADIUS)
 
             # If the object has moved out of the frame, stop the robot
             if self.closest_detected_obj is None:
-                logger.debug("{}Object moved out of frame, stopping".format(COL_CODE_DEBUG))
+                logger.debug("{}Object moved out of frame, finding for new trash".format(COL_CODE_DEBUG))
                 sleep(6)
-                self.move_joystick.on(0, 0, self.JOYSTICK_SCALE_RADIUS)
-                self.auto_mode = False
-                return
+                while self.closest_detected_obj is None and self.auto_mode == True:
+                    self.check_for_manual_override()
+                    self.move_joystick.on(-self._AUTO_FORWARD_SPEED, 0, self.JOYSTICK_SCALE_RADIUS)
+                pass
 
             # Small sleep to avoid CPU overuse
             sleep(0.01)
@@ -169,6 +176,8 @@ class CleanSweep:
         # Object is considered collected, reset closest_detected_obj
         self.closest_detected_obj = None
 
+    # Log movement for debugging or retracing steps
+    # self.movements.append(detected_obj_direction)
 
     def check_for_manual_override(self):
         """Checks if any PS4 buttons are pressed to override auto mode."""
