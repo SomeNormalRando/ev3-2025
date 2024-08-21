@@ -31,10 +31,10 @@ import numpy as np
 # lower and upper bounds for the colours in HSV
 # HSV range in cv2: H [0, 179], S [0, 255], [0, 255]
 # in HSV, there are two sections of red (start & end) and one section of blue
-RED1_LOWER = np.array([0, 150, 150])
+RED1_LOWER = np.array([0, 150, 194])
 RED1_UPPER = np.array([10, 255, 255])
 
-RED2_LOWER = np.array([170, 150, 150])
+RED2_LOWER = np.array([170, 254, 254])
 RED2_UPPER = np.array([180, 255, 255])
 
 BLUE_LOWER = np.array([90, 150, 150])

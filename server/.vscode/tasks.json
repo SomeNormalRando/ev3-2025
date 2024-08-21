@@ -6,13 +6,13 @@
         {
             "label": "server.py [run Flask server]",
             "type": "shell",
-            "command": "python server.py",
+            "command": ".venv\\scripts\\activate && python server.py",
             "problemMatcher": []
         },
         {
             "label": "ngrok.exe [expose localhost:8000 to the Internet]",
             "type": "shell",
-            "command": "ngrok http 8000 --domain hagfish-hardy-baboon.ngrok-free.app",
+            "command": "ngrok http 192.168.1.8:8000 --domain=joint-silkworm-elegant.ngrok-free.app",
             "problemMatcher": []
         }
     ]
