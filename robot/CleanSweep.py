@@ -22,6 +22,7 @@ class ForwardOrLeftOrRight(Enum):
     left = -1
     forward = 0
     right = 1
+    stop = 2
 
 class CleanSweep:
     '''
@@ -117,11 +118,11 @@ class CleanSweep:
 
     def run_auto_mode(self):
         if PS4Keymap.BTN_R2.value in self.active_keys:
-            logger.info("{}[R2] robot retracing steps...".format(COL_CODE_FG_GREEN))
+            # logger.info("{}[R2] robot retracing steps...".format(COL_CODE_FG_GREEN))
 
-            self.retrace_steps()
+            # # self.retrace_steps()
 
-            logger.info("{}robot finished retracing steps".format(COL_CODE_FG_GREEN))
+            # logger.info("{}robot finished retracing steps".format(COL_CODE_FG_GREEN))
 
             logger.info("{}automatic mode STOPPED - controller enabled".format(COL_CODE_FG_GREEN))
             self.auto_mode = False
@@ -132,11 +133,22 @@ class CleanSweep:
 
         if self.closest_detected_obj is None:
             logger.debug("{}self.closest_detected_obj is None".format(COL_CODE_DEBUG))
-        else:
-            # data format: [[centre_x, centre_y], distance, location]
-            detected_obj_location_id = self.closest_detected_obj[2]
-            logger.debug("{}detected_obj_location_id: {}".format(COL_CODE_DEBUG, detected_obj_location_id))
+        elif self.closest_detected_obj[2] == -1:
+            logger.debug("{}Turning left momentarily".format(COL_CODE_DEBUG))
+            self.move_joystick.on(-self._AUTO_FORWARD_SPEED, 0, self.JOYSTICK_SCALE_RADIUS)  # Turn left
+            sleep(0.5)
+            self.move_joystick.on(0, 0, self.JOYSTICK_SCALE_RADIUS)  # Stop to process data
+            sleep(0.5)  # Delay to process the data
 
+
+        elif self.closest_detected_obj[2] == 1:
+            logger.debug("{}Turning right momentarily".format(COL_CODE_DEBUG))
+            self.move_joystick.on(self._AUTO_FORWARD_SPEED, 0, self.JOYSTICK_SCALE_RADIUS)  # Turn right
+            sleep(0.5)  # Turn right for a brief moment
+            self.move_joystick.on(0, 0, self.JOYSTICK_SCALE_RADIUS)  # Stop to process data
+            sleep(0.5)  # Delay to process the data
+                
+            logger.debug("{}detected_obj_location_id: {}".format(COL_CODE_DEBUG, detected_obj_location_id))
 
         self.move_forward_or_turn(detected_obj_location_id)
 
@@ -219,6 +231,12 @@ class CleanSweep:
         elif movement_type == ForwardOrLeftOrRight.right:
             self.move_joystick.on(
                 CleanSweep._AUTO_FORWARD_SPEED, # turn right (in place)
+                0,
+                CleanSweep.JOYSTICK_SCALE_RADIUS
+            )
+        elif movement_type == ForwardOrLeftOrRight.stop:
+            self.move_joystick.on(
+                0, # turn right (in place)
                 0,
                 CleanSweep.JOYSTICK_SCALE_RADIUS
             )

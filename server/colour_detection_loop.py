@@ -20,8 +20,8 @@ from config import col_dict, VIDEO_CAPTURE_DEVICE_INDEX, EVNAME_SEND_IMAGE, EVNA
 def ndarray_to_b64(ndarray: numpy.typing.NDArray):
     return base64.b64encode(ndarray.tobytes()).decode()
 
-# def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
-def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
+def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
+# def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
     logger.info("started colour_detection_loop")
 
     @socketio_app.on(EVNAME_RECEIVE_HSV_COLOURS_UPDATE)
@@ -41,11 +41,14 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
         socketio_logger.debug(f"\x1b[30mCurrent phone orientation: roll: {rollDeg}, pitch: {pitchDeg}, yaw: {yawDeg}".format(rollDeg, pitchDeg, yawDeg))
 
 
-    capture = cv2.VideoCapture(VIDEO_CAPTURE_DEVICE_INDEX)
+    capture = cv2.VideoCapture(VIDEO_CAPTURE_DEVICE_INDEX, cv2.CAP_DSHOW) 
 
     if not capture.isOpened():
         logger.error("could not open video stream")
         return
+
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     # Get the width of the video frame
     frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -66,7 +69,7 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
             logger.error("could not read frame")
             return
 
-        (processed_frame, red_detected_objects, blue_detected_objects) = detect_colour_and_draw(raw_frame, midpoint_x, col_dict["red1lower"], col_dict["red1upper"], col_dict["red2lower"], col_dict["red2upper"], col_dict["bluelower"], col_dict["blueupper"], col_dict["yellowupper"], col_dict["yellowlower"])
+        (processed_frame, red_detected_objects, blue_detected_objects, yellow_detected_objects) = detect_colour_and_draw(raw_frame, midpoint_x, col_dict["red1lower"], col_dict["red1upper"], col_dict["red2lower"], col_dict["red2upper"], col_dict["bluelower"], col_dict["blueupper"], col_dict["yellowupper"], col_dict["yellowlower"])
 
         (retval, jpg_image) = cv2.imencode(".jpg", processed_frame)
 
@@ -78,15 +81,15 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
             "b64ImageData": ndarray_to_b64(jpg_image),
             "redDetectedObjects": red_detected_objects,
             "blueDetectedObjects": blue_detected_objects,
-            "yellowDetectedObjects" : yell
+            "yellowDetectedObjects" : yellow_detected_objects
         })
 
 
-        # if (now - last) < SEND_TO_EV3_INTERVAL:
-        #     continue
+        if (now - last) < SEND_TO_EV3_INTERVAL:
+            continue
 
-        # last = now
-        # try:
-        #     client_sock.sendall(stringify_json(red_detected_objects).encode())
-        # except OSError as e:
-        #     logger.error(f"`OSError` while sending data: {e}")
+        last = now
+        try:
+            client_sock.sendall(stringify_json(red_detected_objects).encode())
+        except OSError as e:
+            logger.error(f"`OSError` while sending data: {e}")

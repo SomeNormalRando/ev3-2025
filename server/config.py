@@ -12,10 +12,10 @@ SERVER_RUN_PARAMS = {
 # JC's address: D8:12:65:88:74:74
 # ZJ's address: 60:F2:62:A9:D8:CC
 # YX's address: F8:89:D2:70:CA:BA
-BLUETOOTH_ADDRESS = "E4:B3:18:64:F3:DD"
+BLUETOOTH_ADDRESS = "F8:89:D2:70:CA:BA"
 BLUETOOTH_CHANNEL = 5 # random number
 
-do_bluetooth = False
+do_bluetooth = True
 
 VIDEO_CAPTURE_DEVICE_INDEX = 2
 
@@ -40,8 +40,8 @@ RED2_UPPER = np.array([180, 255, 255])
 BLUE_LOWER = np.array([90, 150, 150])
 BLUE_UPPER = np.array([120, 255, 255])
 
-YELLOW_UPPER = np.array([20, 100, 100])
-YELLOW_LOWER = np.array(([30, 225, 225]))
+YELLOW_LOWER = np.array([20, 50, 150])   # Lowered saturation and increased brightness
+YELLOW_UPPER = np.array([30, 255, 255])  # Kept the brightness at maximum and
 
 col_dict = {
     "red1lower": RED1_LOWER,
@@ -62,7 +62,7 @@ FOCAL_LENGTH = 500
 
 MIN_CONTOUR_AREA = 500
 # maximum number of pixels from midpoint (on the x-axis) that will be considered centre 
-CENTRE_RANGE = 25
+CENTRE_RANGE = 35
 
 import logging
 SOCKETIO_LOGGER_LEVEL = logging.DEBUG
