@@ -15,7 +15,7 @@ import logging
 logger = logging.getLogger(__name__)
 socketio_logger = logging.getLogger("socket.io")
 
-from config import col_dict, VIDEO_CAPTURE_DEVICE_INDEX, EVNAME_SEND_IMAGE, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_HSV_COLOURS_UPDATE, EVNAME_RECEIVE_CURRENT_ORIENTATION, SEND_TO_EV3_INTERVAL
+from config import col_dict, VIDEO_CAPTURE_DEVICE_INDEX, BLUE_TIME, EVNAME_SEND_IMAGE, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_HSV_COLOURS_UPDATE, EVNAME_RECEIVE_CURRENT_ORIENTATION, SEND_TO_EV3_INTERVAL
 
 def ndarray_to_b64(ndarray: numpy.typing.NDArray):
     return base64.b64encode(ndarray.tobytes()).decode()
@@ -63,6 +63,8 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
     logger.info(f"opened video capture from device {VIDEO_CAPTURE_DEVICE_INDEX}")
     logger.info(f"video dimensions: {frame_width} × {frame_height}\n")
 
+    last_send_blue = 0
+
     last = 0
     now = 0
     while True:
@@ -73,12 +75,11 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
             logger.error("could not read frame")
             return
 
-        (processed_frame, red_detected_objects, blue_detected_objects, yellow_detected_objects) = detect_colour_and_draw(
+        (processed_frame, red_detected_objects, blue_detected_objects) = detect_colour_and_draw(
             raw_frame, midpoint_x,
             col_dict["red1lower"], col_dict["red1upper"],
             col_dict["red2lower"], col_dict["red2upper"],
             col_dict["bluelower"], col_dict["blueupper"],
-            col_dict["yellowlower"], col_dict["yellowupper"],
         )
 
         (retval, jpg_image) = cv2.imencode(".jpg", processed_frame)
@@ -87,11 +88,21 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
             logger.warning("image encoding unsuccessful, skipping frame")
             continue
 
-        socketio_app.emit(EVNAME_SEND_IMAGE, {    
+        # send to server
+        socketio_app.emit(EVNAME_SEND_IMAGE, {
             "b64ImageData": ndarray_to_b64(jpg_image),
             "redDetectedObjects": red_detected_objects,
             "blueDetectedObjects": blue_detected_objects,
         })
+
+        obstacles_detected = False
+        # if blue objects were detected for more than 3 seconds
+        # if len(blue_detected_objects) > 0 and (now - last_send_blue) >= BLUE_TIME:
+        #     logger.debug(f"O B S T A C L E")
+        #     obstacles_detected = True
+        #     last_send_blue = now
+        if len(blue_detected_objects) > 0:
+            obstacles_detected = True
 
 
         if (now - last) < SEND_TO_EV3_INTERVAL:
@@ -99,6 +110,7 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
 
         last = now
         try:
-            client_sock.sendall(stringify_json(red_detected_objects).encode())
+            # send to EV3
+            client_sock.sendall(stringify_json([red_detected_objects, obstacles_detected]).encode())
         except OSError as e:
             logger.error(f"`OSError` while sending data: {e}")

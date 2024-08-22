@@ -26,18 +26,19 @@ EVNAME_RECEIVE_HSV_COLOURS_UPDATE = "hsv-colours-update"
 EVNAME_RECEIVE_CURRENT_ORIENTATION = "orientation"
 
 SEND_TO_EV3_INTERVAL = 250 * pow(10, 6) # nanoseconds (milliseconds * 10^6)
+BLUE_TIME = 2 * pow(10, 9) # nanoseconds (seconds * 10^9)
 
 import numpy as np
 # lower and upper bounds for the colours in HSV
 # HSV range in cv2: H [0, 179], S [0, 255], [0, 255]
 # in HSV, there are two sections of red (start & end) and one section of blue
-RED1_LOWER = np.array([0, 150, 150])
+RED1_LOWER = np.array([0, 150, 200])
 RED1_UPPER = np.array([10, 255, 255])
 
 RED2_LOWER = np.array([170, 150, 150])
 RED2_UPPER = np.array([180, 255, 255])
 
-BLUE_LOWER = np.array([90, 150, 150])
+BLUE_LOWER = np.array([80, 0, 200])
 BLUE_UPPER = np.array([120, 255, 255])
 
 YELLOW_LOWER = np.array([15, 150, 150])
@@ -61,7 +62,8 @@ YELLOW_REAL_OBJECT_WIDTH = 1
 # focal length of the camera
 FOCAL_LENGTH = 500
 
-MIN_CONTOUR_AREA = 500
+MIN_CONTOUR_AREA = 1000
+
 # maximum number of pixels from midpoint (on the x-axis) that will be considered centre 
 CENTRE_RANGE = 35
 

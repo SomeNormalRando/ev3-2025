@@ -1,3 +1,4 @@
 {
     "ev3devBrowser.download.include": "*.py",
+    "python.analysis.typeCheckingMode": "basic",
 }
