@@ -14,7 +14,7 @@ main {
 main h2 {
 	margin: 0;
 }
-main p > span {
+#fps-number, #speed-display {
 	font-weight: bold;
 	font-size: 1.4rem;
 }
@@ -34,16 +34,28 @@ main p > span {
 	height: 1rem;
 }
 .key-box {
+	width: 5rem;
+	height: 5rem;
+}
+button.key-box {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	width: 5rem;
-	height: 5rem;
-	border: 0.2rem solid white;
+	background-color: var(--bg-col);
+	color: var(--fg-col) white;
+	border: 0.2rem solid var(--fg-col);
 	font-size: 2rem;
+	transition-duration: 0ms;
 }
-.key-box-pressed {
+button.key-box:hover {
+	filter: none;
+}
+button.key-box:hover:not(.key-box-pressed) {
 	background-color: dimgrey;
+}
+button.key-box-pressed {
+	background-color: var(--fg-col);
+	color: var(--bg-col)
 }
 .empty-box {
 	border: none;

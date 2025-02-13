@@ -21,17 +21,24 @@
 			<p>FPS: <span id="fps-number"></span></p>
 		</div>
 
-		<div class="sidebar-section">*use WASD or arrow keys to navigate</div>
-
 		<div class="sidebar-section" id="key-boxes-section">
-			<div class="key-box" id="key-box-forward">↑</div>
+			<button class="key-box" id="key-box-forward">↑</button>
 			<div class="break"></div>
-			<div class="key-box" id="key-box-left">←</div>
+			<button class="key-box" id="key-box-left">←</button>
 			<div class="key-box empty-box"></div>
-			<div class="key-box" id="key-box-right">→</div>
+			<button class="key-box" id="key-box-right">→</button>
 			<div class="break"></div>
-			<div class="key-box" id="key-box-back">↓</div>
+			<button class="key-box" id="key-box-back">↓</button>
 		</div>
+		
+		<div class="sidebar-section">
+			<label for="speed-slider">Speed: <span id="speed-display"></span></label>
+			<div><input type="range" id="speed-slider"></div>
+		</div>
+	</div>
+	<div>
+		<p>use WASD or arrow keys to move (only one key at a time)</p>
+		<p>use the space bar to increase speed and left shift key to decrease speed</p>
 	</div>
 	</main>
 </body>

@@ -46,11 +46,11 @@ def recv_loop(sock: socket.socket, robot: CleanSweep):
                     break
 
         if len(data_json) > 1:
-            movement_direction = data_json[1]
+            [_, movement_direction, movement_speed] = data_json
             command = MovementCommand(movement_direction)
 
             bl_logger.debug("movement command: {}".format(command))
-            robot.move_by_command(command, CleanSweep.INTERFACE_CONTROL_SPEED)
+            robot.move_by_command(command, movement_speed)
 
 
 def bluetooth_loop(robot: CleanSweep):

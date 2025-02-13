@@ -1,3 +1,4 @@
+/* eslint-disable function-paren-newline */
 /* eslint-env browser */
 /* global io */
 /* eslint-disable no-console, camelcase */
@@ -12,6 +13,9 @@ const keyBoxBack = document.getElementById("key-box-back");
 const keyBoxRight = document.getElementById("key-box-right");
 const keyBoxPressedClass = "key-box-pressed";
 
+const speedSlider = document.getElementById("speed-slider");
+const speedDisplay = document.getElementById("speed-display");
+
 const socket = io();
 
 socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData }) => {
@@ -20,38 +24,78 @@ socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData }) => {
 	fpsNumberEl.innerText = calcFPS();
 });
 
-function removePressedClassAndSendStopCommand(el) {
-	if (el.classList.contains(keyBoxPressedClass)) el.classList.remove(keyBoxPressedClass);
-	socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand.STOP);
+speedSlider.min = 1;
+speedSlider.max = 100;
+speedSlider.value = 50;
+speedDisplay.innerText = speedSlider.value;
+
+speedSlider.addEventListener("input", () => {
+	speedDisplay.innerText = speedSlider.value;
+});
+
+const currentSpeed = () => parseInt(speedSlider.value, 10);
+
+const dict = [
+	{
+		buttonElement: keyBoxForward,
+		command: MovementCommand.FORWARD_CONTINUOUSLY,
+		keys: ["W", "w", "ArrowUp"],
+	},
+	{
+		buttonElement: keyBoxLeft,
+		command: MovementCommand.TURN_LEFT_CONTINUOUSLY,
+		keys: ["A", "a", "ArrowLeft"],
+	},
+	{
+		buttonElement: keyBoxBack,
+		command: MovementCommand.BACKWARD_CONTINUOUSLY,
+		keys: ["S", "s", "ArrowDown"],
+	},
+	{
+		buttonElement: keyBoxRight,
+		command: MovementCommand.TURN_RIGHT_CONTINUOUSLY,
+		keys: ["D", "d", "ArrowRight"],
+	},
+];
+
+for (const d of dict) {
+	d.buttonElement.addEventListener("click", () => {
+		if (d.buttonElement.classList.contains(keyBoxPressedClass)) {
+			d.buttonElement.classList.remove(keyBoxPressedClass);
+			socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand.STOP, currentSpeed());
+			return;
+		}
+		for (const d2 of dict) {
+			d2.buttonElement.classList.remove(keyBoxPressedClass);
+		}
+		d.buttonElement.classList.add(keyBoxPressedClass);
+		socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, d.command, currentSpeed());
+	});
 }
 
-const checkForwardKey = (ev) => ev.key.toLowerCase() === "w" || ev.key === "ArrowUp";
-const checkLeftKey = (ev) => ev.key.toLowerCase() === "a" || ev.key === "ArrowLeft";
-const checkBackKey = (ev) => ev.key.toLowerCase() === "s" || ev.key === "ArrowDown";
-const checkRightKey = (ev) => ev.key.toLowerCase() === "d" || ev.key === "ArrowRight";
-
 document.addEventListener("keyup", (ev) => {
-	if (checkForwardKey(ev)) removePressedClassAndSendStopCommand(keyBoxForward);
-	if (checkLeftKey(ev)) removePressedClassAndSendStopCommand(keyBoxLeft);
-	if (checkBackKey(ev)) removePressedClassAndSendStopCommand(keyBoxBack);
-	if (checkRightKey(ev)) removePressedClassAndSendStopCommand(keyBoxRight);
+	for (const d of dict) {
+		if (d.keys.includes(ev.key)) {
+			d.buttonElement.dispatchEvent(new Event("click"));
+		}
+	}
 });
 
 document.addEventListener("keydown", (ev) => {
-	if (checkForwardKey(ev)) {
-		keyBoxForward.classList.add(keyBoxPressedClass);
-		socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand.FORWARD_CONTINUOUSLY);
+	for (const d of dict) {
+		if (d.keys.includes(ev.key) && !d.buttonElement.classList.contains(keyBoxPressedClass)) {
+			d.buttonElement.dispatchEvent(new Event("click"));
+		}
 	}
-	if (checkLeftKey(ev)) {
-		keyBoxLeft.classList.add(keyBoxPressedClass);
-		socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand.TURN_LEFT_CONTINUOUSLY);
+
+	if (ev.key === "Shift") {
+		speedSlider.value = currentSpeed() - 2;
+		speedSlider.dispatchEvent(new Event("input"));
 	}
-	if (checkRightKey(ev)) {
-		keyBoxRight.classList.add(keyBoxPressedClass);
-		socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand.TURN_RIGHT_CONTINUOUSLY);
-	}
-	if (checkBackKey(ev)) {
-		keyBoxBack.classList.add(keyBoxPressedClass);
-		socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand.BACKWARD_CONTINUOUSLY);
+	if (ev.key === " ") {
+		// disable scrolling on space
+		ev.preventDefault();
+		speedSlider.value = currentSpeed() + 2;
+		speedSlider.dispatchEvent(new Event("input"));
 	}
 });

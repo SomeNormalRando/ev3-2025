@@ -40,4 +40,7 @@ button:enabled:hover {
 button:disabled:hover {
 	cursor: not-allowed;
 }
-
+input {
+	padding: 1rem 0;
+	width: 100%;
+}

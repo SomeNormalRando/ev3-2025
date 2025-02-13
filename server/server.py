@@ -107,9 +107,9 @@ with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOM
 
     # robot remote control from the web interface
     @socketio_app.on(EVNAME_RECEIVE_MOVEMENT_COMMAND)
-    def receive_movement_command(movement_direction):
+    def receive_movement_command(movement_direction, movement_speed):
         print("receive_movement_command: direction", movement_direction)
-        client_sock.sendall(stringify_json([None, movement_direction]).encode())
+        client_sock.sendall(stringify_json([None, movement_direction, movement_speed]).encode())
 
     executor = ThreadPoolExecutor(max_workers=2)
     future = executor.submit(start_colour_detection_loop, socketio_app, client_sock)
