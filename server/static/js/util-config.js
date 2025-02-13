@@ -1,3 +1,25 @@
+/* eslint-env browser */
+export const EVNAME_RECEIVE_IMAGE = "data-url";
+export const EVNAME_RECEIVE_DEFAULT_HSV_COLOURS = "default-hsv-colours";
+export const EVNAME_SEND_HSV_COLOURS_UPDATE = "hsv-colours-update";
+export const EVNAME_SEND_MOVEMENT_COMMAND = "movement-command";
+export const B64_PREFIX = "data:image/jpeg;base64,";
+
+export const MovementCommand = {
+	STOP: -2,
+	FORWARD_CONTINUOUSLY: 0,
+	BACKWARD_CONTINUOUSLY: 2,
+	TURN_LEFT_CONTINUOUSLY: 3,
+	TURN_RIGHT_CONTINUOUSLY: 4,
+	TURN_A_LITTLE_LEFT: -1,
+	TURN_A_LITTLE_RIGHT: 1,
+};
+
+export const imgEl = document.getElementById("img-el");
+export const fpsNumberEl = document.getElementById("fps-number");
+export const redDetectionsNumberEl = document.getElementById("red-detections-number");
+export const blueDetectionsNumberEl = document.getElementById("blue-detections-number");
+
 const UPDATE_FPS_EVERY_MS = 250;
 
 // from https://gist.github.com/mjackson/5311256

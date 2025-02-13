@@ -6,11 +6,13 @@ mimetypes.add_type("text/css", ".css")
 from flask import Flask, request, redirect, render_template, url_for
 from flask_socketio import SocketIO, emit
 
+from json import dumps as stringify_json
+
 import socket
-from colour_detection_loop import colour_detection_loop
+from colour_detection_loop import start_colour_detection_loop
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from config import SERVER_RUN_PARAMS, BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL, do_bluetooth, EVNAME_SEND_DEFAULT_HSV_COLOURS, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL
+from config import SERVER_RUN_PARAMS, BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL, connect_to_ev3_via_bluetooth, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_MOVEMENT_COMMAND, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL
 
 import logging
 logging.basicConfig(
@@ -53,10 +55,10 @@ def interface():
     logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /interface")
     return render_template("interface.html")
 
-@flask_app.route("/gyro")
-def gyro():
-    logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /gyro")
-    return render_template("gyro.html")
+@flask_app.route("/control")
+def control():
+    logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /control")
+    return render_template("control.html")
 
 @flask_app.route("/favicon.ico")
 def favicon():
@@ -75,11 +77,11 @@ def handle_connect():
         "BLUE_UPPER": BLUE_UPPER.tolist(),
     }, callback = (lambda _: socketio_logger.info("sent default HSV colours to client")))
 
-if (do_bluetooth is False):
+if (connect_to_ev3_via_bluetooth is False):
     bl_logger.info(f"starting server without Bluetooth...")
 
     executor = ThreadPoolExecutor(max_workers=2)
-    future = executor.submit(colour_detection_loop, socketio_app)
+    future = executor.submit(start_colour_detection_loop, socketio_app, None)
 
     print()
     future2 = executor.submit(socketio_app.run, app=flask_app, **SERVER_RUN_PARAMS)
@@ -87,7 +89,7 @@ if (do_bluetooth is False):
     for f in as_completed([future, future2]):
         logger.error(f"`future` returned result: {f.result()}")
 
-# executes if do_bluetooth is True
+# executes if connect_to_ev3_via_bluetooth is True
 with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as server_sock:
     bl_logger.info(f"created server socket")
     bl_logger.debug(f"\x1b[30m`server_sock`: {server_sock}")
@@ -103,8 +105,14 @@ with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOM
     bl_logger.debug(f"\x1b[30m`client_sock`: {client_sock}, address {address}")
     bl_logger.debug(f"\x1b[30m`server_sock`: {server_sock}")
 
+    # robot remote control from the web interface
+    @socketio_app.on(EVNAME_RECEIVE_MOVEMENT_COMMAND)
+    def receive_movement_command(movement_direction):
+        print("receive_movement_command: direction", movement_direction)
+        client_sock.sendall(stringify_json([None, movement_direction]).encode())
+
     executor = ThreadPoolExecutor(max_workers=2)
-    future = executor.submit(colour_detection_loop, socketio_app, client_sock)
+    future = executor.submit(start_colour_detection_loop, socketio_app, client_sock)
 
     print()
     future2 = executor.submit(socketio_app.run, app=flask_app, **SERVER_RUN_PARAMS)

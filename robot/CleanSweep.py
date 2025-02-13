@@ -1,4 +1,4 @@
-from config import RECEIVE_FROM_SERVER_INTERVAL, COL_CODE_DEBUG, COL_CODE_FG_GREEN
+from config import RECEIVE_FROM_SERVER_INTERVAL, COL_CODE_DEBUG, COL_CODE_FG_GREEN, MovementCommand
 
 import logging
 cs_logger = logging.getLogger("CleanSweep")
@@ -17,21 +17,15 @@ from ev3dev2.led import Leds
 
 LEDs = Leds()
 
-from enum import Enum
 from typing import Tuple, Union
 
 cs_logger.info("modules loaded")
-
-class ForwardOrLeftOrRight(Enum):
-    left = -1
-    forward = 0
-    right = 1
 
 class CleanSweep:
     '''Receives input from a connected PS4 controller and runs the robot. '''
 
     JOYSTICK_SCALE_RADIUS = 100
-    '''joystick radius provided to MoveJoystick.on()'''
+    '''joystick radius provided to `MoveJoystick.on()`'''
 
     MIN_JOYSTICK_THRESHOLD = 10
     '''minimum value of PS4 joystick values to move motors'''
@@ -41,17 +35,21 @@ class CleanSweep:
 
     MOVEMENT_SPEED_REDUCTION = 3
 
-    # automatic mode
-    _AUTO_FORWARD_SPEED = 12
-    _AUTO_TURNING_SPEED = 2
+    INTERFACE_CONTROL_SPEED = 80
 
-    _AUTO_TURN_DURATION = 0.2
-    '''[auto mode] duration to sleep while turning'''
-    _AUTO_TURN_DELAY = 0.5
-    '''[auto mode] duration to sleep after turning is finished'''
+    # automatic mode
+    AUTO_FORWARD_SPEED = 12
+    AUTO_TURNING_SPEED = 2
+
+    AUTO_TURN_DURATION = 0.2
+    '''[command / auto mode] duration to sleep while turning'''
+    AUTO_TURN_DELAY = 0.5
+    '''[command / auto mode] duration to sleep after turning is finished'''
+
+    INPUT_OUTPUT_NOT_CONNECTED_WAIT_DURATION = 5
 
     def __init__(self):
-        self.controller = CleanSweep.find_ps4_controller()
+        # self.controller = CleanSweep.find_ps4_controller()
 
         self.connect_inputs_and_outputs()
 
@@ -71,7 +69,6 @@ class CleanSweep:
         self.reduce_movejoystick_speed = False
 
     def connect_inputs_and_outputs(self):
-        t = 5
         while True:
             try:
                 self.move_joystick = MoveJoystick(OUTPUT_B, OUTPUT_C)
@@ -86,9 +83,10 @@ class CleanSweep:
             except DeviceNotFound as error:
                 print()
                 cs_logger.error(error)
-                cs_logger.info("initialising again in {} seconds".format(t))
-                sleep(t)
+                cs_logger.info("initialising again in {} seconds".format(CleanSweep.INPUT_OUTPUT_NOT_CONNECTED_WAIT_DURATION))
+                sleep(CleanSweep.INPUT_OUTPUT_NOT_CONNECTED_WAIT_DURATION)
 
+    """
     def controller_read_loop(self):
         '''repeatedly reads left joystick input values from the PS4 controller'''
         cs_logger.info("started PS4 controller read loop")
@@ -109,7 +107,7 @@ class CleanSweep:
         now = 0
 
         while True:
-            self.active_keys = self.controller.active_keys()
+            # self.active_keys = self.controller.active_keys()
 
             if self.auto_mode is True:
                 now = time() * 1000.0
@@ -142,25 +140,15 @@ class CleanSweep:
             return
 
         # move forward if no detected objects
-        detected_obj_direction = ForwardOrLeftOrRight.forward
+        detected_obj_direction = MovementCommand.FORWARD_CONTINUOUSLY
 
         if self.closest_detected_obj is not None:
-            detected_obj_direction = ForwardOrLeftOrRight(self.closest_detected_obj[2])
+            detected_obj_direction = MovementCommand(self.closest_detected_obj[2])
 
-        self.move_forward_or_turn(detected_obj_direction)
+        self.move_by_command(detected_obj_direction, CleanSweep.AUTO_FORWARD_SPEED)
 
         # Small sleep to avoid CPU overuse
         sleep(0.01)
-
-    # these two functions are run from bluetooth.py when obstacles_detected is True (open) or False (close)
-    def open_opener(self):
-        cs_logger.info("opening opener")
-        self.opener_open = True
-        self.opening_motor.on_for_degrees(CleanSweep.OPENING_MOTOR_SPEED, -CleanSweep.OPENING_MOTOR_DEGREES)
-    def close_opener(self):
-        cs_logger.info("closing opener")
-        self.opener_open = False
-        self.opening_motor.on_for_degrees(CleanSweep.OPENING_MOTOR_SPEED, CleanSweep.OPENING_MOTOR_DEGREES)
 
     def run_motors(self):
         '''runs repeatedly when `self.auto_mode` is `False`'''
@@ -193,34 +181,59 @@ class CleanSweep:
                 self.reduce_movejoystick_speed = False
                 cs_logger.info("{}[X] MoveJoystick speed - NORMAL".format(COL_CODE_FG_GREEN))
                 sleep(0.01)
+    """
 
-    def move_forward_or_turn(self, movement_type: ForwardOrLeftOrRight):
-        if movement_type == ForwardOrLeftOrRight.forward:
+    def move_by_command(self, movement_type: MovementCommand, speed):
+        if movement_type == MovementCommand.STOP:
+            self.move_joystick.off()
+
+        # continuous commands
+        elif movement_type == MovementCommand.FORWARD_CONTINUOUSLY:
             self.move_joystick.on(
                 0, # go straight
-                CleanSweep._AUTO_FORWARD_SPEED,
+                speed,
                 CleanSweep.JOYSTICK_SCALE_RADIUS
             )
-        elif movement_type == ForwardOrLeftOrRight.left:
+        elif movement_type == MovementCommand.BACKWARD_CONTINUOUSLY:
             self.move_joystick.on(
-                -CleanSweep._AUTO_FORWARD_SPEED, # turn left (in place)
+                0, # go straight backwards
+                -speed,
+                CleanSweep.JOYSTICK_SCALE_RADIUS
+            )
+        elif movement_type == MovementCommand.TURN_LEFT_CONTINUOUSLY:
+            self.move_joystick.on(
+                -speed, # turn left (in place)
                 0,
                 CleanSweep.JOYSTICK_SCALE_RADIUS
             )
-            sleep(CleanSweep._AUTO_TURN_DURATION)
-
-            self.move_joystick.off()
-            sleep(CleanSweep._AUTO_TURN_DELAY)
-        elif movement_type == ForwardOrLeftOrRight.right:
+        elif movement_type == MovementCommand.TURN_RIGHT_CONTINUOUSLY:
             self.move_joystick.on(
-                CleanSweep._AUTO_FORWARD_SPEED, # turn right (in place)
+                speed, # turn right (in place)
                 0,
                 CleanSweep.JOYSTICK_SCALE_RADIUS
             )
-            sleep(CleanSweep._AUTO_TURN_DURATION)
+
+        # discrete commands
+        elif movement_type == MovementCommand.TURN_A_LITTLE_LEFT:
+            self.move_joystick.on(
+                -speed, # turn left (in place)
+                0,
+                CleanSweep.JOYSTICK_SCALE_RADIUS
+            )
+            sleep(CleanSweep.AUTO_TURN_DURATION)
 
             self.move_joystick.off()
-            sleep(CleanSweep._AUTO_TURN_DELAY)
+            sleep(CleanSweep.AUTO_TURN_DELAY)
+        elif movement_type == MovementCommand.TURN_A_LITTLE_RIGHT:
+            self.move_joystick.on(
+                speed, # turn right (in place)
+                0,
+                CleanSweep.JOYSTICK_SCALE_RADIUS
+            )
+            sleep(CleanSweep.AUTO_TURN_DURATION)
+
+            self.move_joystick.off()
+            sleep(CleanSweep.AUTO_TURN_DELAY)
 
     #region static methods
     @staticmethod

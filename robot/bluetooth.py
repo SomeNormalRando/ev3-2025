@@ -1,4 +1,4 @@
-from config import BLUETOOTH_ADDRESS, CHANNEL, COL_CODE_BL_LOGGER, COL_CODE_DEBUG
+from config import BLUETOOTH_ADDRESS, CHANNEL, COL_CODE_BL_LOGGER, COL_CODE_DEBUG, MovementCommand
 
 import logging
 bl_logger = logging.getLogger("bluetooth")
@@ -12,8 +12,8 @@ from CleanSweep import CleanSweep
 
 def recv_loop(sock: socket.socket, robot: CleanSweep):
     while True:
-        if (robot.auto_mode == False):
-            continue
+        # if (robot.auto_mode == False):
+        #     continue
 
         raw_data = sock.recv(1024)
 
@@ -28,27 +28,30 @@ def recv_loop(sock: socket.socket, robot: CleanSweep):
             bl_logger.debug("{}JSONDecodeError (started receiving data)".format(COL_CODE_DEBUG))
             continue
 
-        [red_detected_objects, obstacles_detected] = data_json
+        red_detected_objects = data_json[0]
 
-        if obstacles_detected is True and robot.opener_open is False:
-            robot.open_opener()
-        elif obstacles_detected is False and robot.opener_open is True:
-            robot.close_opener()
+        if red_detected_objects is not None:
+            if len(red_detected_objects) == 0:
+                robot.closest_detected_obj = None
+                continue
 
+            # ? data format: [ [[centre_x, centre_y], distance, location], [[centre_x, centre_y], distance, location] ]
 
-        if len(red_detected_objects) == 0:
-            robot.closest_detected_obj = None
-            continue
+            # find value of min distance
+            min_val = min(obj[1] for obj in red_detected_objects)
+            # get the object that has the min distance
+            for obj in red_detected_objects:
+                if obj[1] == min_val:
+                    robot.closest_detected_obj = obj
+                    break
 
-        # data format: [ [[centre_x, centre_y], distance, location], [[centre_x, centre_y], distance, location] ]
+        if len(data_json) > 1:
+            movement_direction = data_json[1]
+            command = MovementCommand(movement_direction)
 
-        # find value of min distance
-        min_val = min(obj[1] for obj in red_detected_objects)
-        # get the object that has the min distance
-        for obj in red_detected_objects:
-            if obj[1] == min_val:
-                robot.closest_detected_obj = obj
-                break
+            bl_logger.debug("movement command: {}".format(command))
+            robot.move_by_command(command, CleanSweep.INTERFACE_CONTROL_SPEED)
+
 
 def bluetooth_loop(robot: CleanSweep):
     bl_logger.info("{}attempting to connect to server...".format(COL_CODE_BL_LOGGER))

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Web Interface - Clean-Sweep</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" type="text/css" media="screen" href="static/main.css">
+	<link rel="stylesheet" type="text/css" media="screen" href="static/interface.css">
+
+	<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+	<script src="static/js/control.js" type="module" defer></script>
+	<script src="static/js/util-config.js" type="module" defer></script>
+</head>
+<body>
+	<h1>Clean-Sweep Web Control</h1>
+	<main>
+	<img id="img-el">
+	<div id="sidebar">
+		<div class="sidebar-section">
+			<p>FPS: <span id="fps-number"></span></p>
+		</div>
+
+		<div class="sidebar-section">*use WASD or arrow keys to navigate</div>
+
+		<div class="sidebar-section" id="key-boxes-section">
+			<div class="key-box" id="key-box-forward">↑</div>
+			<div class="break"></div>
+			<div class="key-box" id="key-box-left">←</div>
+			<div class="key-box empty-box"></div>
+			<div class="key-box" id="key-box-right">→</div>
+			<div class="break"></div>
+			<div class="key-box" id="key-box-back">↓</div>
+		</div>
+	</div>
+	</main>
+</body>
+</html>

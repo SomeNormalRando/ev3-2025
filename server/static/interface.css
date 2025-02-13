@@ -23,3 +23,29 @@ main p > span {
 	width: 2rem;
 	height: 2rem;
 }
+
+#key-boxes-section {
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+.break {
+	flex-basis: 100%;
+	height: 1rem;
+}
+.key-box {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 5rem;
+	height: 5rem;
+	border: 0.2rem solid white;
+	font-size: 2rem;
+}
+.key-box-pressed {
+	background-color: dimgrey;
+}
+.empty-box {
+	border: none;
+	width: 7rem;
+}

@@ -15,13 +15,15 @@ import logging
 logger = logging.getLogger(__name__)
 socketio_logger = logging.getLogger("socket.io")
 
-from config import col_dict, VIDEO_CAPTURE_DEVICE_INDEX, BLUE_TIME, EVNAME_SEND_IMAGE, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_HSV_COLOURS_UPDATE, EVNAME_RECEIVE_CURRENT_ORIENTATION, SEND_TO_EV3_INTERVAL
+from config import col_dict, VIDEO_CAPTURE_DEVICE_INDEX, EVNAME_SEND_IMAGE, EVNAME_RECEIVE_HSV_COLOURS_UPDATE, SEND_TO_EV3_INTERVAL
 
 def ndarray_to_b64(ndarray: numpy.typing.NDArray):
     return base64.b64encode(ndarray.tobytes()).decode()
 
-def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket):
-# def colour_detection_loop(socketio_app: flask_socketio.SocketIO):
+def start_colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: socket.socket | None):
+    '''
+    provide `None` as `client_sock` to **not** send data to EV3
+    '''
     logger.info("started colour_detection_loop")
 
     @socketio_app.on(EVNAME_RECEIVE_HSV_COLOURS_UPDATE)
@@ -35,11 +37,6 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
 
         socketio_logger.debug(f"\x1b[30mHSV colours update: {colourName} {new_colours}")
         col_dict[colourName] = np.array(new_colours)
-
-    @socketio_app.on(EVNAME_RECEIVE_CURRENT_ORIENTATION)
-    def receive_current_phone_orientation(rollDeg, pitchDeg, yawDeg):
-        socketio_logger.debug(f"\x1b[30mCurrent phone orientation: roll: {rollDeg}, pitch: {pitchDeg}, yaw: {yawDeg}".format(rollDeg, pitchDeg, yawDeg))
-
 
     capture = cv2.VideoCapture(VIDEO_CAPTURE_DEVICE_INDEX, cv2.CAP_DSHOW) 
 
@@ -62,8 +59,6 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
     print()
     logger.info(f"opened video capture from device {VIDEO_CAPTURE_DEVICE_INDEX}")
     logger.info(f"video dimensions: {frame_width} × {frame_height}\n")
-
-    last_send_blue = 0
 
     last = 0
     now = 0
@@ -95,22 +90,11 @@ def colour_detection_loop(socketio_app: flask_socketio.SocketIO, client_sock: so
             "blueDetectedObjects": blue_detected_objects,
         })
 
-        obstacles_detected = False
-        # if blue objects were detected for more than 3 seconds
-        # if len(blue_detected_objects) > 0 and (now - last_send_blue) >= BLUE_TIME:
-        #     logger.debug(f"O B S T A C L E")
-        #     obstacles_detected = True
-        #     last_send_blue = now
-        if len(blue_detected_objects) > 0:
-            obstacles_detected = True
 
-
-        if (now - last) < SEND_TO_EV3_INTERVAL:
-            continue
-
-        last = now
-        try:
-            # send to EV3
-            client_sock.sendall(stringify_json([red_detected_objects, obstacles_detected]).encode())
-        except OSError as e:
-            logger.error(f"`OSError` while sending data: {e}")
+        if client_sock is not None and (now - last) > SEND_TO_EV3_INTERVAL:
+            last = now
+            try:
+                # send to EV3
+                client_sock.sendall(stringify_json([red_detected_objects]).encode())
+            except OSError as e:
+                logger.error(f"`OSError` while sending data: {e}")

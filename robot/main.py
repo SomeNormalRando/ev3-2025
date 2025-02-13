@@ -27,11 +27,11 @@ LEDs.set_color("RIGHT", "AMBER")
 
 robot = CleanSweep()
 
-controller_read_loop_thread = Thread(target = robot.controller_read_loop)
-controller_read_loop_thread.start()
+# controller_read_loop_thread = Thread(target = robot.controller_read_loop)
+# controller_read_loop_thread.start()
 
-motors_loop_thread = Thread(target = robot.activekeys_loop)
-motors_loop_thread.start()
+# motors_loop_thread = Thread(target = robot.activekeys_loop)
+# motors_loop_thread.start()
 
 
 from bluetooth import bluetooth_loop

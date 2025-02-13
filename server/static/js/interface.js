@@ -2,17 +2,11 @@
 /* global io */
 /* eslint-disable no-console, camelcase */
 
-import { HSVtoRGB, calcFPS } from "./util.js";
-
-const EVNAME_RECEIVE_IMAGE = "data-url";
-const EVNAME_RECEIVE_DEFAULT_HSV_COLOURS = "default-hsv-colours";
-const EVNAME_SEND_HSV_COLOURS_UPDATE = "hsv-colours-update";
-const B64_PREFIX = "data:image/jpeg;base64,";
-
-const imgEl = document.getElementById("img-el");
-const fpsNumber = document.getElementById("fps-number");
-const redDetectionsNumber = document.getElementById("red-detections-number");
-const blueDetectionsNumber = document.getElementById("blue-detections-number");
+import {
+	HSVtoRGB, calcFPS,
+	EVNAME_RECEIVE_IMAGE, EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, EVNAME_SEND_HSV_COLOURS_UPDATE,
+	B64_PREFIX, imgEl, fpsNumberEl, redDetectionsNumberEl, blueDetectionsNumberEl,
+} from "./util-config.js";
 
 const socket = io();
 
@@ -112,7 +106,7 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 	console.log("received default HSV colours from server:", receivedColours);
 
 	const {
-		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER
+		RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER,
 	} = receivedColours;
 
 	const {
@@ -164,8 +158,8 @@ socket.on(EVNAME_RECEIVE_DEFAULT_HSV_COLOURS, (receivedColours) => {
 socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData, redDetectedObjects, blueDetectedObjects }) => {
 	imgEl.src = `${B64_PREFIX}${b64ImageData}`;
 
-	redDetectionsNumber.innerText = redDetectedObjects.length;
-	blueDetectionsNumber.innerText = blueDetectedObjects.length;
+	redDetectionsNumberEl.innerText = redDetectedObjects.length;
+	blueDetectionsNumberEl.innerText = blueDetectedObjects.length;
 
-	fpsNumber.innerText = calcFPS();
+	fpsNumberEl.innerText = calcFPS();
 });
