@@ -1,4 +1,4 @@
-from config import BLUETOOTH_ADDRESS, CHANNEL, COL_CODE_BL_LOGGER, COL_CODE_DEBUG, MovementCommand
+from config import BLUETOOTH_ADDRESS, CHANNEL, COL_CODE_BL_LOGGER, COL_CODE_DEBUG, COL_CODE_FG_GREEN, MovementCommand
 
 import logging
 bl_logger = logging.getLogger("bluetooth")
@@ -7,8 +7,14 @@ bl_logger.setLevel(logging.INFO)
 from json import loads
 from json.decoder import JSONDecodeError
 
+from threading import Thread
+
 import socket
 from CleanSweep import CleanSweep
+
+from ev3dev2.led import Leds
+
+LEDs = Leds()
 
 def recv_loop(sock: socket.socket, robot: CleanSweep):
     while True:
@@ -20,12 +26,37 @@ def recv_loop(sock: socket.socket, robot: CleanSweep):
         data_str = raw_data.decode()
         bl_logger.debug("{}data received: {}".format(COL_CODE_DEBUG, data_str))
 
-        data_json = []
+        data_json = None
         try:
             data_json = loads(data_str)
         except JSONDecodeError:
             # this is normal because `s.recv()` builds up previous sent data that was not `recv`ed
             bl_logger.debug("{}JSONDecodeError (started receiving data)".format(COL_CODE_DEBUG))
+            continue
+
+        if isinstance(data_json, dict):
+            type = data_json.get("type")
+            if type == "MOVEMENT":
+                robot.move_by_command(MovementCommand(data_json.get("direction")), data_json.get("speed"))
+            elif type == "FUNNEL":
+                robot.rotate_funnel(data_json.get("command"))
+            elif type == "AUTO_MODE":
+                command = data_json.get("command")
+                if command == 0:
+                    robot.auto_mode = False
+                    bl_logger.info("{}automatic mode STOPPED".format(COL_CODE_FG_GREEN))
+
+                    LEDs.set_color("LEFT", "GREEN")
+                    LEDs.set_color("RIGHT", "GREEN")
+                elif command == 1:
+                    robot.auto_mode = True
+
+                    bl_logger.info("{}automatic mode STARTED".format(COL_CODE_FG_GREEN))
+                    LEDs.set_color("LEFT", "YELLOW")
+                    LEDs.set_color("RIGHT", "YELLOW")
+
+                    auto_mode_thread = Thread(target = robot.start_auto_mode_loop)
+                    auto_mode_thread.start()
             continue
 
         red_detected_objects = data_json[0]
@@ -44,13 +75,6 @@ def recv_loop(sock: socket.socket, robot: CleanSweep):
                 if obj[1] == min_val:
                     robot.closest_detected_obj = obj
                     break
-
-        if len(data_json) > 1:
-            [_, movement_direction, movement_speed] = data_json
-            command = MovementCommand(movement_direction)
-
-            bl_logger.debug("movement command: {}".format(command))
-            robot.move_by_command(command, movement_speed)
 
 
 def bluetooth_loop(robot: CleanSweep):

@@ -1,6 +1,7 @@
 main {
 	display: flex;
 	justify-content: center;
+	align-items: center;
 	flex-flow: wrap;
 }
 #sidebar {
@@ -37,6 +38,9 @@ main h2 {
 	width: 5rem;
 	height: 5rem;
 }
+.funnel-key-box {
+	width: 10rem;
+}
 button.key-box {
 	display: flex;
 	justify-content: center;
@@ -60,4 +64,12 @@ button.key-box-pressed {
 .empty-box {
 	border: none;
 	width: 7rem;
+}
+#key-box-auto-mode {
+	font-size: 1.4rem;
+	text-transform: uppercase;
+}
+#key-box-auto-mode.key-box-pressed {
+	background-color: orangered;
+	color: var(--fg-col);
 }

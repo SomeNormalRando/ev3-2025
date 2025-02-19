@@ -24,6 +24,7 @@ video, img {
 	margin: 0 1.2rem 1.2rem 1.2rem;
 	max-width: 90vw;
 	max-height: 82vh;
+	position: sticky;
 }
 button {
 	background-color: var(--fg-col);
@@ -42,5 +43,7 @@ button:disabled:hover {
 }
 input {
 	padding: 1rem 0;
+}
+input[type="select"] {
 	width: 100%;
 }

@@ -1,8 +1,14 @@
 /* eslint-env browser */
+
+// config
+export const speedAdjustStep = 2;
+
 export const EVNAME_RECEIVE_IMAGE = "data-url";
 export const EVNAME_RECEIVE_DEFAULT_HSV_COLOURS = "default-hsv-colours";
 export const EVNAME_SEND_HSV_COLOURS_UPDATE = "hsv-colours-update";
 export const EVNAME_SEND_MOVEMENT_COMMAND = "movement-command";
+export const EVNAME_SEND_FUNNEL_COMMAND = "funnel-command";
+export const EVNAME_SEND_AUTO_MODE_COMMAND = "auto-mode-command";
 export const B64_PREFIX = "data:image/jpeg;base64,";
 
 export const MovementCommand = {

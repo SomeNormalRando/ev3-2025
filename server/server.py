@@ -12,7 +12,7 @@ import socket
 from colour_detection_loop import start_colour_detection_loop
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from config import SERVER_RUN_PARAMS, BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL, connect_to_ev3_via_bluetooth, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_MOVEMENT_COMMAND, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL
+from config import SERVER_RUN_PARAMS, BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL, connect_to_ev3_via_bluetooth, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_MOVEMENT_COMMAND, EVNAME_RECEIVE_FUNNEL_COMMAND, EVNAME_RECEIVE_AUTO_MODE_COMMAND, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL
 
 import logging
 logging.basicConfig(
@@ -108,8 +108,29 @@ with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOM
     # robot remote control from the web interface
     @socketio_app.on(EVNAME_RECEIVE_MOVEMENT_COMMAND)
     def receive_movement_command(movement_direction, movement_speed):
-        print("receive_movement_command: direction", movement_direction)
-        client_sock.sendall(stringify_json([None, movement_direction, movement_speed]).encode())
+        socketio_logger.info("receive_movement_command: direction {} & speed {}".format(movement_direction, movement_speed))
+        client_sock.sendall(stringify_json({
+            "type": "MOVEMENT",
+            "direction": movement_direction,
+            "speed": movement_speed
+        }).encode())
+        # client_sock.sendall(stringify_json([None, movement_direction, movement_speed]).encode())
+
+    @socketio_app.on(EVNAME_RECEIVE_FUNNEL_COMMAND)
+    def receive_funnel_command(command):
+        socketio_logger.info("receive_funnel_command: command {}".format(command))
+        client_sock.sendall(stringify_json({
+            "type": "FUNNEL",
+            "command": command
+        }).encode())
+
+    @socketio_app.on(EVNAME_RECEIVE_AUTO_MODE_COMMAND)
+    def receive_auto_mode_command(command):
+        socketio_logger.info("receive_auto_mode_command: command {}".format(command))
+        client_sock.sendall(stringify_json({
+            "type": "AUTO_MODE",
+            "command": command
+        }).encode())
 
     executor = ThreadPoolExecutor(max_workers=2)
     future = executor.submit(start_colour_detection_loop, socketio_app, client_sock)

@@ -3,15 +3,13 @@
 /* global io */
 /* eslint-disable no-console, camelcase */
 import {
-	calcFPS, EVNAME_RECEIVE_IMAGE, EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand,
-	B64_PREFIX, imgEl, fpsNumberEl,
+	calcFPS, EVNAME_RECEIVE_IMAGE, EVNAME_SEND_MOVEMENT_COMMAND, EVNAME_SEND_FUNNEL_COMMAND,
+	EVNAME_SEND_AUTO_MODE_COMMAND, MovementCommand, B64_PREFIX, speedAdjustStep, imgEl, fpsNumberEl,
 } from "./util-config.js";
 
-const keyBoxForward = document.getElementById("key-box-forward");
-const keyBoxLeft = document.getElementById("key-box-left");
-const keyBoxBack = document.getElementById("key-box-back");
-const keyBoxRight = document.getElementById("key-box-right");
 const keyBoxPressedClass = "key-box-pressed";
+
+const keyBoxAutoMode = document.getElementById("key-box-auto-mode");
 
 const speedSlider = document.getElementById("speed-slider");
 const speedDisplay = document.getElementById("speed-display");
@@ -35,67 +33,136 @@ speedSlider.addEventListener("input", () => {
 
 const currentSpeed = () => parseInt(speedSlider.value, 10);
 
-const dict = [
+const movementMap = [
 	{
-		buttonElement: keyBoxForward,
+		buttonElementID: "key-box-forward",
+		buttonElement: null,
 		command: MovementCommand.FORWARD_CONTINUOUSLY,
 		keys: ["W", "w", "ArrowUp"],
 	},
 	{
-		buttonElement: keyBoxLeft,
+		buttonElementID: "key-box-left",
+		buttonElement: null,
 		command: MovementCommand.TURN_LEFT_CONTINUOUSLY,
 		keys: ["A", "a", "ArrowLeft"],
 	},
 	{
-		buttonElement: keyBoxBack,
+		buttonElementID: "key-box-back",
+		buttonElement: null,
 		command: MovementCommand.BACKWARD_CONTINUOUSLY,
 		keys: ["S", "s", "ArrowDown"],
 	},
 	{
-		buttonElement: keyBoxRight,
+		buttonElementID: "key-box-right",
+		buttonElement: null,
 		command: MovementCommand.TURN_RIGHT_CONTINUOUSLY,
 		keys: ["D", "d", "ArrowRight"],
 	},
 ];
 
-for (const d of dict) {
+// -1: close, 1: open, 0: stop
+const funnelMap = [
+	{
+		buttonElementID: "key-box-close-funnel",
+		buttonElement: null,
+		command: -1,
+		keys: ["Shift"],
+	},
+	{
+		buttonElementID: "key-box-open-funnel",
+		buttonElement: null,
+		command: 1,
+		keys: [" "],
+	},
+];
+
+for (const d of movementMap) {
+	d.buttonElement = document.getElementById(d.buttonElementID);
+
 	d.buttonElement.addEventListener("click", () => {
 		if (d.buttonElement.classList.contains(keyBoxPressedClass)) {
 			d.buttonElement.classList.remove(keyBoxPressedClass);
 			socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand.STOP, currentSpeed());
 			return;
 		}
-		for (const d2 of dict) {
+
+		for (const d2 of movementMap) {
 			d2.buttonElement.classList.remove(keyBoxPressedClass);
 		}
+
 		d.buttonElement.classList.add(keyBoxPressedClass);
 		socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, d.command, currentSpeed());
 	});
 }
 
+for (const d of funnelMap) {
+	d.buttonElement = document.getElementById(d.buttonElementID);
+
+	d.buttonElement.addEventListener("click", () => {
+		if (d.buttonElement.classList.contains(keyBoxPressedClass)) {
+			d.buttonElement.classList.remove(keyBoxPressedClass);
+			socket.emit(EVNAME_SEND_FUNNEL_COMMAND, 0);
+			return;
+		}
+
+		for (const d2 of funnelMap) {
+			d2.buttonElement.classList.remove(keyBoxPressedClass);
+		}
+
+		d.buttonElement.classList.add(keyBoxPressedClass);
+		socket.emit(EVNAME_SEND_FUNNEL_COMMAND, d.command);
+	});
+}
+
 document.addEventListener("keyup", (ev) => {
-	for (const d of dict) {
+	for (const d of movementMap) {
 		if (d.keys.includes(ev.key)) {
-			d.buttonElement.dispatchEvent(new Event("click"));
+			d.buttonElement.classList.remove(keyBoxPressedClass);
+			socket.emit(EVNAME_SEND_MOVEMENT_COMMAND, MovementCommand.STOP, currentSpeed());
+		}
+	}
+	for (const d of funnelMap) {
+		if (d.keys.includes(ev.key)) {
+			d.buttonElement.classList.remove(keyBoxPressedClass);
+			socket.emit(EVNAME_SEND_FUNNEL_COMMAND, 0);
 		}
 	}
 });
 
 document.addEventListener("keydown", (ev) => {
-	for (const d of dict) {
+	for (const d of movementMap) {
 		if (d.keys.includes(ev.key) && !d.buttonElement.classList.contains(keyBoxPressedClass)) {
 			d.buttonElement.dispatchEvent(new Event("click"));
 		}
 	}
 
-	if (ev.key === "Shift") {
-		speedSlider.value = currentSpeed() - 2;
+	for (const d of funnelMap) {
+		if (d.keys.includes(ev.key) && !d.buttonElement.classList.contains(keyBoxPressedClass)) {
+			ev.preventDefault();
+			d.buttonElement.dispatchEvent(new Event("click"));
+		}
+	}
+
+	if (ev.key.toLowerCase() === "q") {
+		speedSlider.value = currentSpeed() - speedAdjustStep;
+		speedSlider.dispatchEvent(new Event("input"));
+	} else if (ev.key.toLowerCase() === "e") {
+		speedSlider.value = currentSpeed() + speedAdjustStep;
 		speedSlider.dispatchEvent(new Event("input"));
 	}
-	if (ev.key === " ") {
-		// disable scrolling on space
-		ev.preventDefault();
-		speedSlider.value = currentSpeed() + 2;
-		speedSlider.dispatchEvent(new Event("input"));
+
+	if (ev.key === "Enter") {
+		keyBoxAutoMode.dispatchEvent(new Event("click"));
 	}
+});
+
+keyBoxAutoMode.addEventListener("click", () => {
+	if (keyBoxAutoMode.classList.contains(keyBoxPressedClass)) {
+		keyBoxAutoMode.classList.remove(keyBoxPressedClass);
+		socket.emit(EVNAME_SEND_AUTO_MODE_COMMAND, 0);
+		return;
+	}
+
+	keyBoxAutoMode.classList.add(keyBoxPressedClass);
+	socket.emit(EVNAME_SEND_AUTO_MODE_COMMAND, 1);
 });

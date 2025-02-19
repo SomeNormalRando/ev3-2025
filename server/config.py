@@ -22,6 +22,8 @@ EVNAME_SEND_IMAGE = "data-url"
 EVNAME_SEND_DEFAULT_HSV_COLOURS = "default-hsv-colours"
 EVNAME_RECEIVE_HSV_COLOURS_UPDATE = "hsv-colours-update"
 EVNAME_RECEIVE_MOVEMENT_COMMAND = "movement-command"
+EVNAME_RECEIVE_FUNNEL_COMMAND = "funnel-command"
+EVNAME_RECEIVE_AUTO_MODE_COMMAND = "auto-mode-command"
 
 SEND_TO_EV3_INTERVAL = 250 * pow(10, 6) # nanoseconds (milliseconds * 10^6)
 

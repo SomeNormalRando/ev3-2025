@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset="UTF-8">
-	<title>Web Interface - Clean-Sweep</title>
+	<title>Control Interface - Clean-Sweep</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
 	<link rel="stylesheet" type="text/css" media="screen" href="static/main.css">
@@ -13,7 +13,7 @@
 	<script src="static/js/util-config.js" type="module" defer></script>
 </head>
 <body>
-	<h1>Clean-Sweep Web Control</h1>
+	<!-- <h1>Clean-Sweep Web Control</h1> -->
 	<main>
 	<img id="img-el">
 	<div id="sidebar">
@@ -35,10 +35,17 @@
 			<label for="speed-slider">Speed: <span id="speed-display"></span></label>
 			<div><input type="range" id="speed-slider"></div>
 		</div>
+		
+		<div class="sidebar-section" id="key-boxes-section">
+			<button class="key-box funnel-key-box" id="key-box-close-funnel">close</button>
+			<button class="key-box funnel-key-box" id="key-box-open-funnel">open</button>
+			<button class="key-box funnel-key-box" id="key-box-auto-mode">auto mode</button>
+		</div>
 	</div>
 	<div>
 		<p>use WASD or arrow keys to move (only one key at a time)</p>
-		<p>use the space bar to increase speed and left shift key to decrease speed</p>
+		<p>use E to increase speed and Q to decrease speed</p>
+		<p>use the space bar to open the funnel and Shift to close the funnel</p>
 	</div>
 	</main>
 </body>
