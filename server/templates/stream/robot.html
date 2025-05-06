@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Robot Interface - MediRover</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" type="text/css" media="screen" href="../static/main.css">
+
+	<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+	<script src="../static/js/stream/robot.js" type="module" defer></script>
+	<script src="../static/js/util-config.js" type="module" defer></script>
+</head>
+<body>
+	<video id="local-video" playsinline autoplay muted></video>
+
+	<!-- this video element is hidden because it will only stream audio and not video -->
+    <video id="remote-video" playsinline autoplay hidden></video>
+
+    <div class="box">
+        <button id="startButton">START</button>
+    </div>
+</body>
+</html>

@@ -11,6 +11,19 @@ export const EVNAME_SEND_FUNNEL_COMMAND = "funnel-command";
 export const EVNAME_SEND_AUTO_MODE_COMMAND = "auto-mode-command";
 export const B64_PREFIX = "data:image/jpeg;base64,";
 
+export const EVNAME_READY_FROM_ROBOT = "WEBRTC-ready-from-robot";
+export const EVNAME_BYE_FROM_ROBOT = "WEBRTC-bye-from-robot";
+export const EVNAME_READY_FROM_OPERATOR = "WEBRTC-ready-from-operator";
+export const EVNAME_BYE_FROM_OPERATOR = "WEBRTC-bye-from-operator";
+
+export const EVNAME_OFFER_FROM_ROBOT = "WEBRTC-offer-from-robot";
+export const EVNAME_ANSWER_FROM_ROBOT = "WEBRTC-answer-from-robot";
+export const EVNAME_CANDIDATE_FROM_ROBOT = "WEBRTC-candidate-from-robot";
+
+export const EVNAME_OFFER_FROM_OPERATOR = "WEBRTC-offer-from-operator";
+export const EVNAME_ANSWER_FROM_OPERATOR = "WEBRTC-answer-from-operator";
+export const EVNAME_CANDIDATE_FROM_OPERATOR = "WEBRTC-candidate-from-operator";
+
 export const MovementCommand = {
 	STOP: -2,
 	FORWARD_CONTINUOUSLY: 0,

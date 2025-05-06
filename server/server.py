@@ -3,16 +3,15 @@ import mimetypes
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from flask import Flask, request, redirect, render_template, url_for
 from flask_socketio import SocketIO, emit
 
-from json import dumps as stringify_json
-
-import socket
 from colour_detection_loop import start_colour_detection_loop
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from connect_to_ev3 import connect_to_ev3_via_bluetooth_socket
 
-from config import SERVER_RUN_PARAMS, BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL, connect_to_ev3_via_bluetooth, EVNAME_SEND_DEFAULT_HSV_COLOURS, EVNAME_RECEIVE_MOVEMENT_COMMAND, EVNAME_RECEIVE_FUNNEL_COMMAND, EVNAME_RECEIVE_AUTO_MODE_COMMAND, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL
+from config import SERVER_RUN_PARAMS, CONNECT_TO_EV3, EVNAME_SEND_DEFAULT_HSV_COLOURS, RED1_LOWER, RED1_UPPER, RED2_LOWER, RED2_UPPER, BLUE_LOWER, BLUE_UPPER, BLUETOOTH_LOGGER_LEVEL, SOCKETIO_LOGGER_LEVEL
 
 import logging
 logging.basicConfig(
@@ -40,9 +39,9 @@ socketio_app = SocketIO(flask_app)
 def r_i():
     return redirect(url_for("interface"))
 
-@flask_app.route("/camera/")
+@flask_app.route("/control/")
 def r_c():
-    return redirect(url_for("camera"))
+    return redirect(url_for("control"))
 
 
 @flask_app.route("/")
@@ -59,6 +58,16 @@ def interface():
 def control():
     logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /control")
     return render_template("control.html")
+
+@flask_app.route("/stream/operator")
+def stream_operator():
+    logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /stream/operator")
+    return render_template("stream/operator.html")
+
+@flask_app.route("/stream/robot")
+def stream_robot():
+    logger.info(f"{request.environ["REMOTE_ADDR"]} connected to /stream/robot")
+    return render_template("stream/robot.html")
 
 @flask_app.route("/favicon.ico")
 def favicon():
@@ -77,63 +86,36 @@ def handle_connect():
         "BLUE_UPPER": BLUE_UPPER.tolist(),
     }, callback = (lambda _: socketio_logger.info("sent default HSV colours to client")))
 
-if (connect_to_ev3_via_bluetooth is False):
+list = [
+    "WEBRTC-ready-from-robot",
+    "WEBRTC-bye-from-robot",
+    "WEBRTC-ready-from-operator",
+    "WEBRTC-bye-from-operator",
+
+    "WEBRTC-offer-from-robot",
+    "WEBRTC-answer-from-robot",
+    "WEBRTC-candidate-from-robot",
+
+    "WEBRTC-offer-from-operator",
+    "WEBRTC-answer-from-operator",
+    "WEBRTC-candidate-from-operator",
+]
+def create_webrtc_handler(evname):
+    def handle_webrtc_event(*args):
+        emit(evname, *args, broadcast = True, include_self = False)
+        print(evname)
+    return handle_webrtc_event
+for evname in list:
+    print(evname)
+    socketio_app.on_event(evname, create_webrtc_handler(evname))
+
+if (CONNECT_TO_EV3 is True):
+    connect_to_ev3_via_bluetooth_socket(flask_app, socketio_app)
+else:
     bl_logger.info(f"starting server without Bluetooth...")
 
     executor = ThreadPoolExecutor(max_workers=2)
     future = executor.submit(start_colour_detection_loop, socketio_app, None)
-
-    print()
-    future2 = executor.submit(socketio_app.run, app=flask_app, **SERVER_RUN_PARAMS)
-
-    for f in as_completed([future, future2]):
-        logger.error(f"`future` returned result: {f.result()}")
-
-# executes if connect_to_ev3_via_bluetooth is True
-with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as server_sock:
-    bl_logger.info(f"created server socket")
-    bl_logger.debug(f"\x1b[30m`server_sock`: {server_sock}")
-
-    server_sock.bind((BLUETOOTH_ADDRESS, BLUETOOTH_CHANNEL))
-    server_sock.listen(1)
-
-    bl_logger.info("waiting for socket connection from client (EV3)...")
-
-    client_sock, address = server_sock.accept()
-
-    bl_logger.info(f"accepted connection from client socket")
-    bl_logger.debug(f"\x1b[30m`client_sock`: {client_sock}, address {address}")
-    bl_logger.debug(f"\x1b[30m`server_sock`: {server_sock}")
-
-    # robot remote control from the web interface
-    @socketio_app.on(EVNAME_RECEIVE_MOVEMENT_COMMAND)
-    def receive_movement_command(movement_direction, movement_speed):
-        socketio_logger.info("receive_movement_command: direction {} & speed {}".format(movement_direction, movement_speed))
-        client_sock.sendall(stringify_json({
-            "type": "MOVEMENT",
-            "direction": movement_direction,
-            "speed": movement_speed
-        }).encode())
-        # client_sock.sendall(stringify_json([None, movement_direction, movement_speed]).encode())
-
-    @socketio_app.on(EVNAME_RECEIVE_FUNNEL_COMMAND)
-    def receive_funnel_command(command):
-        socketio_logger.info("receive_funnel_command: command {}".format(command))
-        client_sock.sendall(stringify_json({
-            "type": "FUNNEL",
-            "command": command
-        }).encode())
-
-    @socketio_app.on(EVNAME_RECEIVE_AUTO_MODE_COMMAND)
-    def receive_auto_mode_command(command):
-        socketio_logger.info("receive_auto_mode_command: command {}".format(command))
-        client_sock.sendall(stringify_json({
-            "type": "AUTO_MODE",
-            "command": command
-        }).encode())
-
-    executor = ThreadPoolExecutor(max_workers=2)
-    future = executor.submit(start_colour_detection_loop, socketio_app, client_sock)
 
     print()
     future2 = executor.submit(socketio_app.run, app=flask_app, **SERVER_RUN_PARAMS)

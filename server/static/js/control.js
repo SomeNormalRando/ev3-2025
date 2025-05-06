@@ -3,9 +3,11 @@
 /* global io */
 /* eslint-disable no-console, camelcase */
 import {
-	calcFPS, EVNAME_RECEIVE_IMAGE, EVNAME_SEND_MOVEMENT_COMMAND, EVNAME_SEND_FUNNEL_COMMAND,
-	EVNAME_SEND_AUTO_MODE_COMMAND, MovementCommand, B64_PREFIX, speedAdjustStep, imgEl, fpsNumberEl,
+	EVNAME_SEND_MOVEMENT_COMMAND, EVNAME_SEND_FUNNEL_COMMAND,
+	EVNAME_SEND_AUTO_MODE_COMMAND, MovementCommand, speedAdjustStep,
 } from "./util-config.js";
+
+import operatorReadyForCall from "./stream/operatorReadyForCall.js";
 
 const keyBoxPressedClass = "key-box-pressed";
 
@@ -16,11 +18,8 @@ const speedDisplay = document.getElementById("speed-display");
 
 const socket = io();
 
-socket.on(EVNAME_RECEIVE_IMAGE, ({ b64ImageData }) => {
-	imgEl.src = `${B64_PREFIX}${b64ImageData}`;
-
-	fpsNumberEl.innerText = calcFPS();
-});
+const videoFromRobotDisplayElement = document.getElementById("video-from-robot");
+operatorReadyForCall(videoFromRobotDisplayElement);
 
 speedSlider.min = 1;
 speedSlider.max = 100;
@@ -132,6 +131,7 @@ document.addEventListener("keyup", (ev) => {
 document.addEventListener("keydown", (ev) => {
 	for (const d of movementMap) {
 		if (d.keys.includes(ev.key) && !d.buttonElement.classList.contains(keyBoxPressedClass)) {
+			ev.preventDefault();
 			d.buttonElement.dispatchEvent(new Event("click"));
 		}
 	}

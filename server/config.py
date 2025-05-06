@@ -13,7 +13,7 @@ SERVER_RUN_PARAMS = {
 BLUETOOTH_ADDRESS = "60:F2:62:A9:D8:CC"
 BLUETOOTH_CHANNEL = 5 # random number
 
-connect_to_ev3_via_bluetooth = True
+CONNECT_TO_EV3 = False
 
 VIDEO_CAPTURE_DEVICE_INDEX = 3
 
@@ -61,7 +61,7 @@ YELLOW_REAL_OBJECT_WIDTH = 1
 # focal length of the camera
 FOCAL_LENGTH = 500
 
-MIN_CONTOUR_AREA = 1000
+MIN_CONTOUR_AREA = 500
 
 # maximum number of pixels from midpoint (on the x-axis) that will be considered centre 
 CENTRE_RANGE = 35

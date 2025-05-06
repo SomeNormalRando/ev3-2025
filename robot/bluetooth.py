@@ -34,6 +34,7 @@ def recv_loop(sock: socket.socket, robot: CleanSweep):
             bl_logger.debug("{}JSONDecodeError (started receiving data)".format(COL_CODE_DEBUG))
             continue
 
+        # if data_json is a dict then it is a command
         if isinstance(data_json, dict):
             type = data_json.get("type")
             if type == "MOVEMENT":
@@ -59,6 +60,7 @@ def recv_loop(sock: socket.socket, robot: CleanSweep):
                     auto_mode_thread.start()
             continue
 
+        # if data_json is a list then it is the detected objects from colour_detection_loop
         red_detected_objects = data_json[0]
 
         if red_detected_objects is not None:
